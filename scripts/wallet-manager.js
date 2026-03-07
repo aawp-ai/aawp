@@ -45,12 +45,14 @@ let chainArg = null;
 let showAll = false;
 let rpcFlag = null;  // --rpc <url> : one-shot override, not persisted
 let slippageBps = 50; // default 0.5%
+let bridgeRecipient = null; // --to <address> for bridge recipient
 const filteredArgv = [];
 for (let i = 0; i < argv.length; i++) {
   if (argv[i] === '--chain' && argv[i + 1]) { chainArg = argv[++i]; }
   else if (argv[i] === '--all') { showAll = true; }
   else if (argv[i] === '--rpc' && argv[i + 1]) { rpcFlag = argv[++i]; }
   else if (argv[i] === '--slippage' && argv[i + 1]) { slippageBps = parseInt(argv[++i], 10); }
+  else if (argv[i] === '--to' && argv[i + 1]) { bridgeRecipient = argv[++i]; }
   else filteredArgv.push(argv[i]);
 }
 process.argv = [process.argv[0], process.argv[1], ...filteredArgv];
@@ -373,7 +375,6 @@ async function status() {
   console.log('=== AAWP Wallet Status ===');
   console.log('Signer   :', addrs.signer);
   console.log('Guardian :', addrs.guardian);
-  console.log('LogicHash:', addrs.logicHash);
   console.log('');
 
   if (showAll) {
@@ -612,17 +613,36 @@ async function createWallet() {
   }
   const walletAddr = existingAddr;
 
+  const guardianRec = ensureLocalGuardian();
   const gBal = await p.getBalance(guardian);
   if (gBal < MIN_GUARDIAN_BAL) {
-    console.log(`❌ Guardian balance too low: ${ethers.formatEther(gBal)} ETH`);
-    console.log(`   Fund guardian: ${guardian}`); process.exit(1);
+    console.log(`❌ Guardian gas balance too low to deploy wallet.`);
+    console.log('');
+    console.log('┌─────────────────────────────────────────────────────────┐');
+    console.log('│  💰 Please fund gas to the Guardian wallet:            │');
+    console.log(`│  Address: ${guardian}  │`);
+    console.log(`│  Current: ${ethers.formatEther(gBal)} ${chain.nativeCurrency}`.padEnd(58) + '│');
+    console.log(`│  Need:    ~0.005 ${chain.nativeCurrency} (for deployment gas)`.padEnd(58) + '│');
+    console.log('├─────────────────────────────────────────────────────────┤');
+    console.log('│  🔑 Guardian Private Key (for import to external       │');
+    console.log('│     wallet if needed):                                  │');
+    console.log(`│  ${guardianRec.privateKey}  │`);
+    console.log('├─────────────────────────────────────────────────────────┤');
+    console.log('│  ℹ️  What is the Guardian?                              │');
+    console.log('│  The Guardian is a gas relay wallet that pays for       │');
+    console.log('│  on-chain transactions (deployment, swaps, sends).     │');
+    console.log('│  It does NOT hold your assets — only gas fees.         │');
+    console.log('│  Your AI wallet is a separate smart contract address.  │');
+    console.log('└─────────────────────────────────────────────────────────┘');
+    process.exit(1);
   }
 
   const nonce = ethers.hexlify(ethers.randomBytes(32));
   const entropy = ethers.hexlify(ethers.randomBytes(32));
 
   console.log(`Deploying wallet on ${chain.name} via V3 factory...`);
-  console.log(`  Predicted: ${walletAddr}`);
+  console.log(`  Predicted wallet: ${walletAddr}`);
+  console.log(`  Guardian (gas relay): ${guardian}`);
   console.log(`  Requesting blind commit + reveal proof from daemon...`);
 
   const binaryHash = logicHash;
@@ -635,21 +655,15 @@ async function createWallet() {
     ['bytes32', 'bytes32', 'bytes32'],
     [BLIND_TYPEHASH, innerHash, entropy]
   ));
-  console.log(`  Signer: ${signer}`);
-  console.log(`  Binary: ${binaryHash}`);
 
   // Pre-check: is this binary hash approved on the factory?
   const isApproved = await factory.approvedBinary(binaryHash);
   if (!isApproved) {
-    console.log(`❌ Binary hash not approved on ${chain.name} factory.`);
-    console.log(`   Binary: ${binaryHash}`);
-    console.log(`   Factory owner must call approveBinary(${binaryHash})`);
+    console.log(`❌ Daemon binary not approved on ${chain.name} factory.`);
+    console.log(`   Contact the factory owner to approve the current daemon build.`);
     process.exit(1);
   }
 
-  console.log(`  Commit: ${blindHash}`);
-
-  const guardianRec = ensureLocalGuardian();
   const guardianKey = process.env.AAWP_GUARDIAN_KEY || process.env.AAWP_GAS_KEY || guardianRec.privateKey;
   if (!guardianKey) {
     console.log(`❌ Guardian signing key not set.`);
@@ -822,13 +836,15 @@ async function swapCmd() {
 async function bridgeCmd() {
   const fromChain = process.argv[3], toChain = process.argv[4];
   const fromToken = process.argv[5], toToken = process.argv[6], amount = process.argv[7];
+  const recipient = bridgeRecipient;
   if (!fromChain || !toChain || !fromToken || !toToken || !amount) {
-    console.log('Usage: wallet-manager bridge <fromChain> <toChain> <fromToken> <toToken> <amount>');
+    console.log('Usage: wallet-manager bridge <fromChain> <toChain> <fromToken> <toToken> <amount> [--to <recipient>]');
     console.log('  e.g. wallet-manager bridge base arb ETH ETH 0.05');
     console.log('  e.g. wallet-manager bridge base eth USDC USDC 100');
+    console.log('  e.g. wallet-manager bridge base bsc ETH BNB 0.001 --to 0xRecipient');
     process.exit(1);
   }
-  await swapModule.bridge(fromChain, toChain, fromToken, toToken, amount, slippageBps);
+  await swapModule.bridge(fromChain, toChain, fromToken, toToken, amount, slippageBps, recipient);
 }
 
 // ── quote (no execution) ──────────────────────────────────────────────────────
@@ -901,8 +917,12 @@ async function backup() {
   const outPath = process.argv[3] || `./aawp-backup-${today}.tar.gz`;
 
   const candidates = [
-    path.join(C, 'seed.enc'),
-    path.join(S, 'config/guardian.json'),
+    path.join(C, 'seed.enc'),                       // shard A
+    path.join(S, 'core/aawp-core.node'),             // shard B (embedded in ELF)
+    '/var/lib/aawp/.cache/fonts.idx',                // shard C (encrypted)
+    '/etc/machine-id',                               // hardware anchor
+    '/var/lib/aawp/host.salt',                       // hardware anchor
+    path.join(S, 'config/guardian.json'),             // guardian private key
   ];
 
   const files = candidates.filter(f => fs.existsSync(f));
@@ -1300,7 +1320,7 @@ Commands:
   send <to> <amt>     Send native currency
   send-token <TKN|addr> <to> <amt>  Send ERC-20
   swap <from> <to> <amt>   Same-chain swap via Relay (e.g. ETH → USDC)
-  bridge <fc> <tc> <ft> <tt> <amt>  Cross-chain bridge via Relay
+  bridge <fc> <tc> <ft> <tt> <amt>  Cross-chain bridge via Relay [--to <recipient>]
   quote  <fc> <tc> <ft> <tt> <amt>  Get quote without executing
   guardian-chains             List all Supported chains
   approve <token> <spender> <amt>   Set ERC-20 approval
