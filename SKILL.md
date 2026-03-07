@@ -1,6 +1,6 @@
 ---
 name: aawp
-version: 1.0.0
+version: 1.0.3
 description: >
   AAWP (AI Agent Wallet Protocol) — self-custodial wallet infrastructure for
   autonomous AI agents on EVM-compatible blockchains. Supports wallet lifecycle
