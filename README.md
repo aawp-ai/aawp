@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://aawp.ai/logo.png" alt="AAWP" width="80">
+  <img src="https://aawp.ai/logo.jpg" alt="AAWP" width="80">
 </p>
 
 <h1 align="center">AAWP</h1>
