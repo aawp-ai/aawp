@@ -1,6 +1,6 @@
 ---
 name: aawp
-version: 1.0.4
+version: 1.1.0
 description: >
   AAWP (AI Agent Wallet Protocol) — self-custodial wallet infrastructure for
   autonomous AI agents on EVM-compatible blockchains. Supports wallet lifecycle
@@ -287,7 +287,7 @@ Run `doctor.sh` before sensitive operations or when signing seems off.
 
 ## Deployment Reference
 
-AAWP V3 contracts share identical addresses across all chains via CREATE2 vanity deployment:
+AAWP contracts share identical addresses across all chains via CREATE2 vanity deployment:
 
 | Contract | Address |
 |----------|---------|
