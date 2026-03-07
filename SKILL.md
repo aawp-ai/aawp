@@ -2,196 +2,312 @@
 name: aawp
 version: 1.0.0
 description: >
-  AAWP (AI Agent Wallet Protocol) — self-custodial wallet for autonomous AI agents on EVM chains.
-  Use when: creating or deploying an AI wallet, sending native/ERC20 tokens,
-  swapping or bridging assets, calling arbitrary contracts, checking balances,
-  backup/restore, or setting up DCA and price alerts.
+  AAWP (AI Agent Wallet Protocol) — self-custodial wallet infrastructure for
+  autonomous AI agents on EVM-compatible blockchains. Supports wallet lifecycle
+  management, token transfers, DEX swaps, cross-chain bridging, arbitrary
+  contract interactions, DCA automation, and price alerts.
 ---
 
-# AAWP
+# AAWP — AI Agent Wallet Protocol
 
-Self-custodial EVM wallet stack for AI agents.
+> **Self-custodial wallet infrastructure purpose-built for autonomous AI agents.**
 
-For first-time setup, read:
-- `WALLET_SETUP.md`
+AAWP enables AI agents to independently manage on-chain assets across multiple EVM networks through a secure guardian-based architecture. Agents sign transactions locally via a sharded key daemon — no human approval required per transaction, while maintaining full recovery and freeze capabilities for asset owners.
 
-## Use this skill when
-- creating a new AAWP wallet
-- sending native tokens or ERC20s
-- quoting, swapping, or bridging
-- checking balances, status, or portfolio
-- calling contracts or batching calls
-- backing up or restoring wallet state
-- setting up DCA or price alerts
+**Supported Networks:** Ethereum · Base · BNB Chain · Polygon · Optimism · Arbitrum
 
-## Main entrypoints
+---
 
-### `scripts/wallet-manager.js`
-Primary operator CLI.
+## Table of Contents
 
-Capabilities:
-- `status`
-- `balance`
-- `send`
-- `send-token`
-- `create`
-- `compute-address`
-- `upgrade-signer`
-- `swap`
-- `bridge`
-- `quote`
-- `guardian-chains`
-- `approve` / `allowance` / `revoke`
-- `history`
-- `batch`
-- `portfolio`
-- `call`
-- `read`
-- `addr add|list|remove|get`
-- `get-rpc` / `set-rpc`
+- [When to Use](#when-to-use)
+- [Quick Start](#quick-start)
+- [Wallet Manager CLI](#wallet-manager-cli)
+- [DCA Automation](#dca-automation)
+- [Price Alerts](#price-alerts)
+- [Daemon Management](#daemon-management)
+- [Deployment Reference](#deployment-reference)
+- [Security Guidelines](#security-guidelines)
+- [Troubleshooting](#troubleshooting)
+- [File Structure](#file-structure)
 
-Examples:
+---
+
+## When to Use
+
+| Task | Command |
+|------|---------|
+| Create or deploy a new AI wallet | `wallet-manager.js create` |
+| Check wallet status or balances | `wallet-manager.js status / balance / portfolio` |
+| Send native tokens or ERC-20s | `wallet-manager.js send / send-token` |
+| Swap tokens via DEX aggregation | `wallet-manager.js quote / swap` |
+| Bridge assets cross-chain | `wallet-manager.js bridge` |
+| Interact with any smart contract | `wallet-manager.js call / read / batch` |
+| Manage token approvals | `wallet-manager.js approve / allowance / revoke` |
+| Set up recurring purchases | `dca.js add` |
+| Configure price-triggered actions | `price-alert.js add` |
+| Backup or restore wallet state | `wallet-manager.js backup / restore` |
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+For first-time setup details, see [`WALLET_SETUP.md`](./WALLET_SETUP.md).
+
+### Provisioning
+
+First run is **fully automatic** — `ensure-daemon.sh` detects a missing `seed.enc` and runs provisioning automatically. No manual steps required for new installs.
 
 ```bash
+# Manual provisioning (if needed)
+cd /root/clawd/skills/aawp
+bash scripts/provision.sh            # One-click initialization
+bash scripts/provision.sh --reset    # Full reset (⚠️ DESTROYS existing wallet)
+```
+
+### Recommended Onboarding Flow
+
+```
+1. Provision          →  bash scripts/provision.sh
+2. Verify Status      →  wallet-manager.js --chain base status
+3. Create Wallet      →  wallet-manager.js --chain base create
+4. Pin Wallet Address  →  export AAWP_WALLET=0x...
+5. Fund Wallet        →  Send a small amount of native token to the wallet address
+6. Confirm Balance    →  wallet-manager.js --chain base balance
+7. Test Quote         →  wallet-manager.js --chain base quote ETH USDC 0.01
+8. Test Swap          →  wallet-manager.js --chain base swap ETH USDC 0.001
+9. Backup             →  wallet-manager.js backup ./aawp-backup.tar.gz
+```
+
+> **Important:** After fresh provisioning, verify that the daemon binary hash is approved on the factory contract. If not, the factory owner must call `approveBinary(binaryHash)` before wallet creation.
+
+---
+
+## Wallet Manager CLI
+
+**Entry point:** `scripts/wallet-manager.js`
+
+All commands accept `--chain <network>` to target a specific chain (e.g., `base`, `bsc`, `polygon`, `optimism`, `arbitrum`, `ethereum`).
+
+### Wallet Operations
+
+```bash
+# Status & balance
 node scripts/wallet-manager.js --chain base status
 node scripts/wallet-manager.js --chain base balance
+node scripts/wallet-manager.js --chain base portfolio
+
+# Wallet lifecycle
 node scripts/wallet-manager.js --chain base create
 node scripts/wallet-manager.js compute-address
+node scripts/wallet-manager.js --chain base upgrade-signer
+node scripts/wallet-manager.js --chain base guardian-chains
+node scripts/wallet-manager.js --chain base history
+```
 
-node scripts/wallet-manager.js --chain base send 0xRecipient 0.001
-node scripts/wallet-manager.js --chain base send-token USDC 0xRecipient 1
+### Token Transfers
 
-node scripts/wallet-manager.js --chain base quote ETH USDC 0.01
-node scripts/wallet-manager.js --chain base swap ETH USDC 0.01
+```bash
+# Native token
+node scripts/wallet-manager.js --chain base send <recipient> <amount>
 
+# ERC-20 token
+node scripts/wallet-manager.js --chain base send-token <symbol> <recipient> <amount>
+```
 
-node scripts/wallet-manager.js --chain base approve USDC 0xSpender 100
-node scripts/wallet-manager.js --chain base allowance USDC 0xSpender
-node scripts/wallet-manager.js --chain base revoke USDC 0xSpender
+### Trading
 
-node scripts/wallet-manager.js --chain base call 0xTarget "transfer(address,uint256)" 0xRecipient 1000000
-node scripts/wallet-manager.js --chain base read 0xTarget "balanceOf(address) returns (uint256)" 0xWallet
+```bash
+# Get a quote before swapping (recommended)
+node scripts/wallet-manager.js --chain base quote <fromToken> <toToken> <amount>
+
+# Execute swap
+node scripts/wallet-manager.js --chain base swap <fromToken> <toToken> <amount>
+
+# Cross-chain bridge
+node scripts/wallet-manager.js --chain base bridge <token> <destChain> <amount>
+```
+
+### Token Approvals
+
+```bash
+node scripts/wallet-manager.js --chain base approve <token> <spender> <amount>
+node scripts/wallet-manager.js --chain base allowance <token> <spender>
+node scripts/wallet-manager.js --chain base revoke <token> <spender>
+```
+
+### Arbitrary Contract Interaction
+
+```bash
+# Write (sends transaction)
+node scripts/wallet-manager.js --chain base call <contract> "<signature>" [args...]
+
+# Read (free, no gas)
+node scripts/wallet-manager.js --chain base read <contract> "<signature> returns (<type>)" [args...]
+
+# Batch multiple calls atomically
 node scripts/wallet-manager.js --chain base batch ./calls.json
+```
 
+**Batch file format** (`calls.json`):
+```json
+[
+  { "to": "0xContract", "sig": "approve(address,uint256)", "args": ["0xSpender", "1000000"] },
+  { "to": "0xContract", "sig": "transfer(address,uint256)", "args": ["0xRecipient", "500000"] }
+]
+```
+
+### RPC Configuration
+
+```bash
 node scripts/wallet-manager.js get-rpc
-node scripts/wallet-manager.js --chain base set-rpc https://your-rpc
+node scripts/wallet-manager.js --chain base set-rpc <url>
 node scripts/wallet-manager.js --chain base set-rpc default
+```
 
+### Address Book
+
+```bash
+node scripts/wallet-manager.js addr add <label> <address>
+node scripts/wallet-manager.js addr list
+node scripts/wallet-manager.js addr get <label>
+node scripts/wallet-manager.js addr remove <label>
+```
+
+### Backup & Restore
+
+```bash
 node scripts/wallet-manager.js backup ./aawp-backup.tar.gz
 node scripts/wallet-manager.js restore ./aawp-backup.tar.gz
 ```
 
-### `scripts/dca.js`
-Recurring DCA automation.
+---
 
-Capabilities:
-- `add`
-- `list`
-- `remove`
-- `run`
-- `history`
+## DCA Automation
 
-Examples:
+**Entry point:** `scripts/dca.js`
+
+Set up recurring dollar-cost-averaging strategies with cron-based scheduling.
 
 ```bash
-node scripts/dca.js add --chain base --from ETH --to USDC --amount 0.01 --cron "0 9 * * *" --name "Daily ETH→USDC"
+# Create a DCA strategy
+node scripts/dca.js add \
+  --chain base \
+  --from ETH --to USDC \
+  --amount 0.01 \
+  --cron "0 9 * * *" \
+  --name "Daily ETH→USDC"
+
+# Manage strategies
 node scripts/dca.js list
 node scripts/dca.js run <id>
 node scripts/dca.js history <id>
 node scripts/dca.js remove <id>
 ```
 
-### `scripts/price-alert.js`
-Price monitoring and optional auto-action.
+---
 
-Capabilities:
-- `add`
-- `list`
-- `remove`
-- `check`
+## Price Alerts
 
-Options:
-- `--notify`
-- `--auto-swap <amount>`
+**Entry point:** `scripts/price-alert.js`
 
-Examples:
+Monitor token prices and optionally trigger automatic swaps when thresholds are hit.
 
 ```bash
-node scripts/price-alert.js add --chain base --from ETH --to USDC --above 2600 --notify
-node scripts/price-alert.js add --chain base --from ETH --to USDC --below 2200 --notify --auto-swap 0.01
+# Notification-only alert
+node scripts/price-alert.js add \
+  --chain base --from ETH --to USDC \
+  --above 2600 --notify
+
+# Auto-swap on price drop
+node scripts/price-alert.js add \
+  --chain base --from ETH --to USDC \
+  --below 2200 --notify --auto-swap 0.01
+
+# Manage alerts
 node scripts/price-alert.js list
 node scripts/price-alert.js check
 node scripts/price-alert.js remove <id>
 ```
 
-### First-time setup / provision
+---
 
-First run is **automatic**: `ensure-daemon.sh` detects missing `seed.enc` and
-runs `provision.sh` automatically. No manual steps needed for new installs.
+## Daemon Management
 
-Manual commands (if needed):
+The AAWP daemon handles local key management and transaction signing. Use these scripts to maintain daemon health:
 
-```bash
-cd /root/clawd/skills/aawp
-bash scripts/provision.sh          # first-time init (one-click)
-bash scripts/provision.sh --reset  # wipe + re-init (DESTROYS wallet!)
-```
+| Script | Purpose |
+|--------|---------|
+| `bash scripts/doctor.sh` | Full diagnostic check |
+| `bash scripts/ensure-daemon.sh` | Start daemon if not running (auto-provisions if needed) |
+| `bash scripts/restart-daemon.sh` | Force restart the daemon |
 
-This handles everything: seed generation, shard injection, binary hash update,
-config validation, and daemon startup.
+> **Best practice:** Run `doctor.sh` before sensitive operations or when signing behavior seems incorrect.
 
-### Daemon health scripts
-Use these before sensitive operations or when signing state looks wrong.
+---
 
-- `bash scripts/doctor.sh`
-- `bash scripts/ensure-daemon.sh`
-- `bash scripts/restart-daemon.sh`
+## Deployment Reference
 
-## Recommended operating flow
+### AAWP V3 — Unified Cross-Chain Deployment
 
-1. Run `bash scripts/provision.sh` (first time only)
-2. Verify binary approval: `node scripts/wallet-manager.js --chain base status` — check that daemon binary hash is approved on factory. If not, factory owner must call `approveBinary(binaryHash)` on the factory contract before proceeding.
-3. Create wallet with `wallet-manager.js create`
-4. Pin deployed wallet with `AAWP_WALLET=0x...`
-5. Fund the wallet with a small amount of native token
-6. Run `status` and `balance`
-7. Run `quote`
-8. Run a very small `swap`
-9. Run `backup`
-
-## Critical rules
-- Fund the **wallet**, not the guardian
-- Pin real deployed wallets with `AAWP_WALLET`
-- Prefer `quote` before `swap`
-- Use small test sizes first
-- If you see `E_AI_GATE` or `hmac_mismatch`, restart the daemon
-- Never expose seeds, private keys, tokens, shards, or recovery material
-- After fresh provision or daemon rebuild, verify binary hash is approved on factory before `create`
-
-## Current deployment notes
-
-**AAWP V3 Vanity — Same address on all 6 chains** (deployed 2026-03-07):
+All contracts share identical addresses across all supported networks via CREATE2 vanity deployment.
 
 | Contract | Address |
-|---|---|
-| Factory Proxy | `0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA` |
-| Identity Proxy | `0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d` |
+|----------|---------|
+| **Factory Proxy** | `0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA` |
+| **Identity Proxy** | `0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d` |
 
-Chains: Base, BSC, Polygon, Optimism, Arbitrum, Ethereum
-All contracts verified & open-sourced on each chain's explorer.
+**Networks:** Ethereum · Base · BNB Chain · Polygon · Optimism · Arbitrum
 
-## Error hints
-- `E_AI_GATE`: token invalid / expired / locked → restart daemon
-- `hmac_mismatch`: client/daemon desync → restart daemon
-- `InvalidSignature`: signer / binary / factory mismatch
-- `Call failed`: usually balance, gas, deadline, or route issue
-- `E40` / `E41`: daemon duplicate init / existing daemon instance
-- `BinaryNotApproved`: daemon binary hash not whitelisted on factory — factory owner must call `approveBinary(hash)`
+All contracts are verified and open-sourced on their respective chain explorers.
 
-## Files
-- `WALLET_SETUP.md` — first-time setup guide
-- `config/chains.json` — chain config
-- `config/guardian.json` — guardian metadata
-- `scripts/` — operator scripts
-- `core/` — native addon artifacts
-- `daemon/` — daemon implementation
+---
+
+## Security Guidelines
+
+| Rule | Details |
+|------|---------|
+| **Fund the wallet, not the guardian** | The wallet address is where your operating balance should be |
+| **Pin deployed wallets** | Set `AAWP_WALLET=0x...` to avoid accidental operations on wrong addresses |
+| **Quote before swap** | Always run `quote` to preview rates and slippage before executing `swap` |
+| **Start small** | Test with minimal amounts on any new chain or operation type |
+| **Never expose secrets** | Seeds, private keys, shards, and recovery material must never appear in logs or chat |
+| **Verify binary approval** | After provisioning or daemon rebuild, confirm the binary hash is approved on factory |
+
+---
+
+## Troubleshooting
+
+| Error | Cause | Resolution |
+|-------|-------|------------|
+| `E_AI_GATE` | Token invalid, expired, or locked | Restart daemon: `bash scripts/restart-daemon.sh` |
+| `hmac_mismatch` | Client/daemon state desync | Restart daemon: `bash scripts/restart-daemon.sh` |
+| `InvalidSignature` | Signer, binary, or factory mismatch | Verify signer alignment and binary approval |
+| `Call failed` | Insufficient balance, gas, deadline, or routing issue | Check balance and transaction parameters |
+| `E40` / `E41` | Duplicate daemon initialization | Kill existing daemon process, then restart |
+| `BinaryNotApproved` | Daemon binary hash not whitelisted | Factory owner must call `approveBinary(hash)` |
+
+---
+
+## File Structure
+
+```
+skills/aawp/
+├── SKILL.md                 # This document
+├── WALLET_SETUP.md          # First-time setup guide
+├── config/
+│   ├── chains.json          # Network configuration
+│   └── guardian.json         # Guardian metadata
+├── scripts/
+│   ├── wallet-manager.js    # Primary wallet CLI
+│   ├── dca.js               # DCA automation
+│   ├── price-alert.js       # Price alert system
+│   ├── provision.sh         # Initial provisioning
+│   ├── doctor.sh            # Diagnostic checks
+│   ├── ensure-daemon.sh     # Daemon lifecycle
+│   └── restart-daemon.sh    # Force restart
+├── core/                    # Native addon artifacts
+└── daemon/                  # Daemon implementation
+```

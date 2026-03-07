@@ -565,7 +565,7 @@ async function swap(chainKey, fromToken, toToken, amountHuman, _unused, slippage
 /**
  * bridge — cross-chain bridge via Relay
  */
-async function bridge(fromChainKey, toChainKey, fromToken, toToken, amountHuman, slippageBps = 50) {
+async function bridge(fromChainKey, toChainKey, fromToken, toToken, amountHuman, slippageBps = 50, recipient = null) {
   const { ethers } = require('ethers');
   const fromChain = CHAINS[fromChainKey];
   const toChain   = CHAINS[toChainKey];
@@ -589,8 +589,8 @@ async function bridge(fromChainKey, toChainKey, fromToken, toToken, amountHuman,
 
   const fromAddr = resolveToken(fromChainKey, fromToken);
 
-  // Destination address — use same wallet address (may not be deployed on dest chain)
-  const destAddr = walletAddr;
+  // Destination address — custom recipient or same wallet address
+  const destAddr = recipient || walletAddr;
   const toAddr   = resolveToken(toChainKey, toToken);
 
   let decimals = 18;
