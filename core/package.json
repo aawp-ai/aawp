@@ -1,0 +1,18 @@
+{
+  "name": "aawp-core",
+  "version": "0.1.0",
+  "private": true,
+  "napi": {
+    "name": "aawp-core",
+    "triples": {
+      "defaults": true
+    }
+  },
+  "scripts": {
+    "build": "napi build --release",
+    "build:debug": "napi build"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.0"
+  }
+}
