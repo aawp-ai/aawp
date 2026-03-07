@@ -921,39 +921,59 @@ async function backup() {
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const outPath = process.argv[3] || `./aawp-backup-${today}.tar.gz`;
 
-  const candidates = [
-    path.join(C, 'seed.enc'),                       // shard A
-    path.join(S, 'core/aawp-core.node'),             // shard B (embedded in ELF)
-    '/var/lib/aawp/.cache/fonts.idx',                // shard C (encrypted)
-    '/etc/machine-id',                               // hardware anchor
-    '/var/lib/aawp/host.salt',                       // hardware anchor
-    path.join(S, 'config/guardian.json'),             // guardian private key
-  ];
+  // Collect files into a staging dir with portable structure
+  const staging = `/tmp/aawp-backup-stage-${Date.now()}`;
+  fs.mkdirSync(staging, { recursive: true });
 
-  const files = candidates.filter(f => fs.existsSync(f));
+  const copyTo = (src, relDst) => {
+    if (!fs.existsSync(src)) return false;
+    const dst = path.join(staging, relDst);
+    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    fs.copyFileSync(src, dst);
+    return true;
+  };
 
-  // Walk .agent-config dir
+  let count = 0;
+  // Core shards & keys (portable relative paths)
+  if (copyTo(path.join(C, 'seed.enc'),              'agent-config/seed.enc'))       count++;
+  if (copyTo(path.join(S, 'core/aawp-core.node'),   'core/aawp-core.node'))         count++;
+  if (copyTo('/var/lib/aawp/.cache/fonts.idx',       'system/fonts.idx'))            count++;
+  if (copyTo('/etc/machine-id',                      'system/machine-id'))           count++;
+  if (copyTo('/var/lib/aawp/host.salt',              'system/host.salt'))            count++;
+  if (copyTo(path.join(S, 'config/guardian.json'),   'config/guardian.json'))         count++;
+
+  // Walk .agent-config dir for any additional files
   if (fs.existsSync(C)) {
-    const walk = (dir) => {
+    const walk = (dir, rel) => {
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, e.name);
-        if (e.isDirectory()) walk(full);
-        else files.push(full);
+        const r = path.join(rel, e.name);
+        if (e.isDirectory()) walk(full, r);
+        else if (copyTo(full, path.join('agent-config', r))) count++;
       }
     };
-    walk(C);
+    walk(C, '');
   }
 
-  const unique = [...new Set(files)];
-  if (unique.length === 0) { console.log('❌ No files to backup.'); process.exit(1); }
+  if (count === 0) { console.log('❌ No files to backup.'); process.exit(1); }
 
-  const listFile = '/tmp/aawp-backup-list.txt';
-  fs.writeFileSync(listFile, unique.join('\n'));
-  execSync(`tar czf "${outPath}" -T "${listFile}"`, { stdio: 'inherit' });
+  // Write manifest with metadata
+  const manifest = {
+    version: 2,
+    createdAt: new Date().toISOString(),
+    skillDir: S,
+    configDir: C,
+    platform: process.platform,
+    arch: process.arch,
+  };
+  fs.writeFileSync(path.join(staging, 'manifest.json'), JSON.stringify(manifest, null, 2));
+
+  execSync(`tar czf "${path.resolve(outPath)}" -C "${staging}" .`, { stdio: 'inherit' });
+  execSync(`rm -rf "${staging}"`);
 
   const sha = execSync(`sha256sum "${outPath}" | cut -d' ' -f1`).toString().trim();
   console.log('✅ Backup:', outPath);
-  console.log('   Files :', unique.length);
+  console.log('   Files :', count);
   console.log('   SHA256:', sha);
   console.log('\nRestore with: wallet-manager restore', outPath);
 }
