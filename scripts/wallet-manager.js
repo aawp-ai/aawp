@@ -89,6 +89,11 @@ function getChain(name) {
   return { key, ...cfg, rpc };
 }
 
+// ── Bootstrap: download missing binaries on first run ────────────────────────
+try {
+  require('child_process').execSync(`bash "${S}/scripts/bootstrap.sh"`, { stdio: 'inherit' });
+} catch (_) { /* bootstrap is best-effort; ensure-daemon will also try */ }
+
 // ── Socket Daemon ────────────────────────────────────────────────────────────
 // ── Daemon Connection (AI Gate Architecture) ────────────────────────────────
 // wallet-manager.js no longer starts its own daemon.

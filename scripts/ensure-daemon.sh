@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/root/clawd/skills/aawp"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOCK="/tmp/.aawp-daemon.lock"
+
+# Bootstrap: download missing binaries if needed
+bash "$SCRIPT_DIR/bootstrap.sh"
 OUT="/tmp/aawp-ensure.out"
 
 cd "$ROOT"
