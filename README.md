@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="https://basescan.org/address/0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA"><img src="https://img.shields.io/badge/Live-6_EVM_Chains-0052FF?style=flat-square" alt="6 Chains"></a>
+  <img src="https://img.shields.io/badge/Live-6_EVM_Chains-0052FF?style=flat-square" alt="6 Chains">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-BUSL--1.1-1a1a2e?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/Solidity-^0.8.24-363636?style=flat-square&logo=solidity" alt="Solidity">
   <img src="https://img.shields.io/badge/Runtime-Rust_N--API-dea584?style=flat-square&logo=rust" alt="Rust">
@@ -49,8 +49,8 @@ Same contract addresses on all chains via **CREATE2 vanity deployment**:
 
 | Contract | Address |
 |----------|---------|
-| Factory (UUPS Proxy) | [`0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA`](https://basescan.org/address/0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA) |
-| Identity (UUPS Proxy) | [`0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d`](https://basescan.org/address/0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d) |
+| Factory | [`0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA`](https://basescan.org/address/0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA) |
+| Identity | [`0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d`](https://basescan.org/address/0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d) |
 
 **Chains:** Base · Ethereum · Arbitrum · Optimism · BSC · Polygon
 
@@ -59,7 +59,13 @@ All contracts verified and open-sourced.
 ## Quick start
 
 ```bash
-# Install via ClawHub
+# Install — universal (auto-detects your AI client)
+curl -fsSL https://aawp.ai/install.sh | sh
+
+# Install via npm / npx
+npx aawp-skill
+
+# Install via ClawHub (OpenClaw — 24/7 daemon + persistent cron)
 clawhub install aawp
 
 # First-time setup
