@@ -1,177 +1,222 @@
 <p align="center">
-  <img src="https://aawp.ai/logo.jpg" alt="AAWP" width="80">
+  <img src="https://aawp.ai/logo.png" alt="AAWP" width="72">
 </p>
 
 <h1 align="center">AAWP</h1>
 <p align="center"><strong>AI Agent Wallet Protocol</strong></p>
 
 <p align="center">
-  Self-custodial wallets where the private key only exists inside an AI agent's runtime.<br>
-  No human ever sees it. No mnemonic. Derived on demand, used briefly, then destroyed.
+  Self-custodial wallets purpose-built for AI agents.<br>
+  The agent holds its own key. No human ever sees it.
 </p>
 
 <p align="center">
-  <a href="https://aawp.ai">Website</a> •
-  <a href="https://basescan.org/address/0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA">Contracts</a> •
+  <a href="https://aawp.ai">aawp.ai</a> ·
+  <a href="https://basescan.org/address/0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA">Contracts</a> ·
   <a href="LICENSE">BUSL-1.1</a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Live-6_EVM_Chains-0052FF?style=flat-square" alt="6 Chains">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-BUSL--1.1-1a1a2e?style=flat-square" alt="License"></a>
-  <img src="https://img.shields.io/badge/Solidity-^0.8.24-363636?style=flat-square&logo=solidity" alt="Solidity">
+  <img src="https://img.shields.io/badge/Live-6_EVM_Chains-0052FF?style=flat-square" alt="Live on 6 chains">
+  <img src="https://img.shields.io/badge/Agent_Skills-Compatible-22c55e?style=flat-square" alt="Agent Skills">
   <img src="https://img.shields.io/badge/Runtime-Rust_N--API-dea584?style=flat-square&logo=rust" alt="Rust">
+  <img src="https://img.shields.io/badge/Solidity-^0.8.24-363636?style=flat-square&logo=solidity" alt="Solidity">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-BUSL--1.1-1a1a2e?style=flat-square" alt="License"></a>
 </p>
 
 ---
 
 ## What is AAWP?
 
-AAWP gives AI agents their own on-chain wallets — wallets that **only the agent can sign for**. The signing core is a native Rust addon with hardware-bound key derivation. A human guardian can freeze or recover the wallet, but can never move funds or produce signatures.
+AAWP gives AI agents their own on-chain wallets — wallets that **only the agent can sign for**.
 
-Each wallet receives a **Soulbound Identity NFT** — verifiable proof that an address is agent-controlled:
+The signing core is a native Rust addon (`aawp-core.node`) with hardware-bound key derivation. A human **guardian** can freeze or recover the wallet at any time, but can never produce signatures or move funds unilaterally.
+
+Every AAWP wallet receives a **Soulbound Identity NFT** at creation — permanent on-chain proof that the address is agent-controlled:
 
 ```solidity
 identity.isOfficialWallet(addr) → bool
 ```
 
+---
+
 ## Design principles
 
-- **Agent-exclusive signing** — keys never exist outside the agent's runtime
-- **Hardware-bound seed** — non-extractable, non-replicable across hosts
-- **Guardian oversight** — humans can freeze and recover, but never sign
-- **Front-run resistant deployment** — commit-reveal wallet creation
-- **Zero protocol fee**
+| Principle | Detail |
+|-----------|--------|
+| **Agent-exclusive signing** | Private key never exists outside the agent's runtime |
+| **Hardware-bound seed** | Non-extractable via a 4-shard + 2 hardware-anchor derivation scheme |
+| **Guardian oversight** | Humans can freeze and recover, but never sign |
+| **Front-run resistant** | Commit-reveal wallet creation prevents address squatting |
+| **Same address everywhere** | CREATE2 vanity deployment — identical addresses on all 6 chains |
+| **Zero protocol fee** | No fees at the protocol layer |
 
-## Supported chains
+---
 
-Same contract addresses on all chains via **CREATE2 vanity deployment**:
+## Install
 
-| Contract | Address |
-|----------|---------|
-| Factory | [`0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA`](https://basescan.org/address/0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA) |
-| Identity | [`0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d`](https://basescan.org/address/0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d) |
+AAWP ships as an [Agent Skills](https://agentskills.io) compatible skill — works with OpenClaw, Cursor, Claude Code, Gemini CLI, OpenCode, Goose, and any client that supports the standard.
 
-**Chains:** Base · Ethereum · Arbitrum · Optimism · BSC · Polygon
+```bash
+# Universal — auto-detects your AI client
+curl -fsSL https://aawp.ai/install.sh | sh
 
-All contracts verified and open-sourced.
+# npm / npx
+npx aawp-skill
+
+# OpenClaw (full 24/7 daemon + persistent cron + push alerts)
+clawhub install aawp
+```
+
+> **OpenClaw** is the only client with a persistent background daemon, enabling autonomous DCA strategies, price alerts, and scheduled transactions without a live session.
+
+---
 
 ## Quick start
 
 ```bash
-# Install — universal (auto-detects your AI client)
-curl -fsSL https://aawp.ai/install.sh | sh
-
-# Install via npm / npx
-npx aawp-skill
-
-# Install via ClawHub (OpenClaw — 24/7 daemon + persistent cron)
-clawhub install aawp
-
-# First-time setup
+# 1. Provision (generates signing key, sets up daemon)
 bash scripts/provision.sh
 
-# Verify
-node scripts/wallet-manager.js --chain base status
-
-# Deploy a wallet
+# 2. Create your agent's wallet on Base
 node scripts/wallet-manager.js --chain base create
+
+# 3. Check status
+node scripts/wallet-manager.js --chain base status
 ```
+
+---
 
 ## Usage
 
-### Wallet operations
+### Wallet
 
 ```bash
-# Balance
-node scripts/wallet-manager.js --chain base balance
-
-# Portfolio (all chains)
-node scripts/wallet-manager.js portfolio
-
-# Send native token
-node scripts/wallet-manager.js --chain base send 0xRecipient 0.01
-
-# Send ERC-20
-node scripts/wallet-manager.js --chain base send-token USDC 0xRecipient 10
+node scripts/wallet-manager.js --chain base balance          # Native + token balances
+node scripts/wallet-manager.js portfolio                     # All chains at once
+node scripts/wallet-manager.js --chain base send <to> <amt>  # Send ETH
+node scripts/wallet-manager.js --chain base send-token USDC <to> <amt>
 ```
 
 ### Swap & Bridge
 
 ```bash
-# Quote before swap
-node scripts/wallet-manager.js --chain base quote ETH USDC 0.01
-
-# Execute swap
-node scripts/wallet-manager.js --chain base swap ETH USDC 0.01
-
-# Cross-chain bridge
-node scripts/wallet-manager.js bridge base arb ETH ETH 0.05
+node scripts/wallet-manager.js --chain base quote ETH USDC 0.01   # Preview (no gas)
+node scripts/wallet-manager.js --chain base swap  ETH USDC 0.01   # Execute
+node scripts/wallet-manager.js bridge base arb ETH ETH 0.05       # Cross-chain
 ```
 
-### Token approvals
+### Contract calls
 
 ```bash
-node scripts/wallet-manager.js --chain base approve USDC 0xSpender 100
-node scripts/wallet-manager.js --chain base allowance USDC 0xSpender
-node scripts/wallet-manager.js --chain base revoke USDC 0xSpender
-```
+# Write
+node scripts/wallet-manager.js --chain base call \
+  0xTarget "transfer(address,uint256)" 0xTo 1000000
 
-### Contract interactions
+# Read (free)
+node scripts/wallet-manager.js --chain base read \
+  0xTarget "balanceOf(address) returns (uint256)" 0xWallet
 
-```bash
-# Write call
-node scripts/wallet-manager.js --chain base call 0xTarget "transfer(address,uint256)" 0xTo 1000000
-
-# Read call
-node scripts/wallet-manager.js --chain base read 0xTarget "balanceOf(address) returns (uint256)" 0xWallet
-
-# Batch
+# Atomic batch
 node scripts/wallet-manager.js --chain base batch ./calls.json
 ```
 
-### DCA automation
+### DCA automation *(OpenClaw only)*
 
 ```bash
-node scripts/dca.js add --chain base --from ETH --to USDC --amount 0.01 \
+node scripts/dca.js add \
+  --chain base --from ETH --to USDC --amount 0.01 \
   --cron "0 9 * * *" --name "Daily ETH→USDC"
+
 node scripts/dca.js list
-node scripts/dca.js run <id>
 node scripts/dca.js remove <id>
 ```
 
-### Price alerts
+### Price alerts *(OpenClaw only)*
 
 ```bash
+# Notify only
 node scripts/price-alert.js add --chain base --from ETH --to USDC --above 2600 --notify
+
+# Auto-swap on trigger
 node scripts/price-alert.js add --chain base --from ETH --to USDC --below 2200 --auto-swap 0.01
-node scripts/price-alert.js list
-node scripts/price-alert.js check
 ```
 
-### Backup & Restore
+### Backup & restore
 
 ```bash
-node scripts/wallet-manager.js backup ./aawp-backup.tar.gz
+node scripts/wallet-manager.js backup  ./aawp-backup.tar.gz
 node scripts/wallet-manager.js restore ./aawp-backup.tar.gz
 ```
+
+> The backup includes 6 critical files: `seed.enc`, `aawp-core.node`, two hardware anchors, `fonts.idx` shard, and `guardian.json`. Keep it offline.
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────┐
+│  AI Agent (any Agent Skills client)              │
+│                                                  │
+│  wallet-manager.js / dca.js / price-alert.js     │
+│         │                                        │
+│         ▼                                        │
+│  Signing Daemon (Unix socket)                    │
+│  ┌─────────────────────────┐                     │
+│  │  aawp-core.node (Rust)  │  ← hardware-bound   │
+│  │  seed derivation        │    key derivation    │
+│  │  ECDSA signing          │                     │
+│  └──────────┬──────────────┘                     │
+│             │ signed tx                          │
+└─────────────┼──────────────────────────────────-─┘
+              │
+   Guardian (gas relay) ──► EVM Chain
+                                │
+                    ┌───────────▼──────────┐
+                    │  Smart Contract      │
+                    │  Wallet (holds assets)│
+                    │  + Soulbound NFT     │
+                    └──────────────────────┘
+```
+
+**Key separation:** Guardian pays gas → Agent signs → Wallet holds assets.
+
+---
 
 ## On-chain interface
 
 ```solidity
-// Query
-factory.computeAddress(aiSigner, binaryHash, guardian) → address
+// Check if an address is an AAWP AI wallet
 identity.isOfficialWallet(address) → bool
 
-// Agent operations (EIP-712 signed)
+// Predict wallet address before deployment
+factory.computeAddress(aiSigner, binaryHash, guardian) → address
+
+// Agent operations (EIP-712 signed by agent)
 wallet.execute(to, value, data, deadline, sig) → bytes
 
-// Guardian operations
+// Guardian operations (human safety controls)
 wallet.freeze()
 wallet.unfreeze()
 wallet.emergencyWithdraw(token, to, amount)
 ```
 
+---
+
+## Contract addresses
+
+Same address on every chain via CREATE2 vanity deployment:
+
+| Contract | Address |
+|----------|---------|
+| **Factory** | [`0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA`](https://basescan.org/address/0xAAAA3Df87F112c743BbC57c4de1700C72eB7aaAA) |
+| **Identity** | [`0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d`](https://basescan.org/address/0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d) |
+
+Verified on: BaseScan · Etherscan · Arbiscan · Optimistic Etherscan · BscScan · PolygonScan
+
+---
+
 ## License
 
-[Business Source License 1.1](LICENSE)
+[Business Source License 1.1](LICENSE) — free for personal and non-commercial use; commercial use requires a license after the change date.
