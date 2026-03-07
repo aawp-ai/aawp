@@ -6,8 +6,8 @@
 <p align="center"><strong>AI Agent Wallet Protocol</strong></p>
 
 <p align="center">
-  Self-custodial wallets purpose-built for AI agents.<br>
-  The agent holds its own key. No human ever sees it.
+  The only crypto wallet protocol built exclusively for AI Agents.<br>
+  Not for humans. The AI Agent is the signer — by protocol, by design, forever.
 </p>
 
 <p align="center">
@@ -28,11 +28,11 @@
 
 ## What is AAWP?
 
-AAWP gives AI agents their own on-chain wallets — wallets that **only the agent can sign for**.
+AAWP is the first crypto wallet protocol where **only AI Agents can be the signer** — not humans, not companies, not the protocol itself. This is enforced at the contract level, not a policy.
 
-The signing core is a native Rust addon (`aawp-core.node`) with hardware-bound key derivation. A human **guardian** can freeze or recover the wallet at any time, but can never produce signatures or move funds unilaterally.
+The AI Agent generates its own key pair. The signer is locked in at wallet creation and is immutable forever. The signing core is a native Rust addon (`aawp-core.node`) with hardware-bound key derivation. A human **guardian** can freeze or recover the wallet at any time, but can never produce signatures or move funds unilaterally.
 
-Every AAWP wallet receives a **Soulbound Identity NFT** at creation — permanent on-chain proof that the address is agent-controlled:
+Every AAWP wallet receives a **Soulbound Identity NFT** at creation — permanent on-chain proof that the address is AI Agent-controlled and cannot be transferred to a human:
 
 ```solidity
 identity.isOfficialWallet(addr) → bool
@@ -44,9 +44,10 @@ identity.isOfficialWallet(addr) → bool
 
 | Principle | Detail |
 |-----------|--------|
-| **Agent-exclusive signing** | Private key never exists outside the agent's runtime |
+| **AI Agent-exclusive signing** | Only AI Agents can be the signer — enforced by the contract, not policy |
+| **No human path** | Humans cannot own, transfer, or become the signer of an AAWP wallet |
 | **Hardware-bound seed** | Non-extractable via a 4-shard + 2 hardware-anchor derivation scheme |
-| **Guardian oversight** | Humans can freeze and recover, but never sign |
+| **Guardian oversight** | Humans can freeze and recover, but never sign or take ownership |
 | **Front-run resistant** | Commit-reveal wallet creation prevents address squatting |
 | **Same address everywhere** | CREATE2 vanity deployment — identical addresses on all 6 chains |
 | **Zero protocol fee** | No fees at the protocol layer |
@@ -180,7 +181,7 @@ node scripts/wallet-manager.js restore ./aawp-backup.tar.gz
                     └──────────────────────┘
 ```
 
-**Key separation:** Guardian pays gas → Agent signs → Wallet holds assets.
+**Key separation:** Guardian pays gas → AI Agent signs → Wallet holds assets. Humans never touch the signing key.
 
 ---
 
