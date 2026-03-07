@@ -5,9 +5,9 @@ const net = require('net');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const addon = require(process.env.AAWP_CORE || '/root/clawd/skills/aawp/core/aawp-core.node');
+const addon = require(process.env.AAWP_CORE || require('path').join(__dirname, '..', 'core', 'aawp-core.node'));
 
-const C = process.env.AAWP_CONFIG || '/root/clawd/skills/aawp/.agent-config';
+const C = process.env.AAWP_CONFIG || require('path').join(__dirname, '..', '.agent-config');
 const LOCK = '/tmp/.aawp-daemon.lock';
 
 function fail(msg) {
@@ -61,12 +61,12 @@ function socketQuery(sock, obj, aiToken) {
     const aiToken = readToken();
     if (!aiToken) fail('missing AAWP_AI_TOKEN');
 
-    addon._i0(C, process.env.AAWP_SKILL || '/root/clawd/skills/aawp');
+    addon._i0(C, process.env.AAWP_SKILL || require('path').resolve(__dirname, '..'));
 
     // Inject guardian private key as gas_key for sign requests (replaces internal relay key)
     if (payload.cmd === 'sign' && !payload.gas_key) {
       try {
-        const gPath = path.join(process.env.AAWP_SKILL || '/root/clawd/skills/aawp', 'config/guardian.json');
+        const gPath = path.join(process.env.AAWP_SKILL || require('path').resolve(__dirname, '..'), 'config/guardian.json');
         const g = JSON.parse(fs.readFileSync(gPath, 'utf8'));
         if (g.privateKey) payload.gas_key = g.privateKey.replace(/^0x/, '');
       } catch (_) {}

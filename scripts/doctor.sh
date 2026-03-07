@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 LOCK="/tmp/.aawp-daemon.lock"
 START_OUT="/tmp/aawp-start.out"
 ENSURE_OUT="/tmp/aawp-ensure.out"
 LOG="/tmp/aawp.log"
-CORE="/root/clawd/skills/aawp/core/aawp-core.node"
-CFG="/root/clawd/skills/aawp/.agent-config"
+CORE="$ROOT/core/aawp-core.node"
+CFG="$ROOT/.agent-config"
 
 say() { printf '%s\n' "$*"; }
 ok() { say "OK   $*"; }
@@ -39,7 +42,7 @@ else
   fail "lock file missing"
 fi
 
-if /root/clawd/skills/aawp/scripts/ensure-daemon.sh >/tmp/aawp-doctor-health.out 2>&1; then
+if "$SCRIPT_DIR/ensure-daemon.sh" >/tmp/aawp-doctor-health.out 2>&1; then
   ADDR=$(tail -n 1 /tmp/aawp-doctor-health.out)
   ok "daemon healthy: $ADDR"
 else

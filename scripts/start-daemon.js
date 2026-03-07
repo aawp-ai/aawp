@@ -11,8 +11,8 @@ const crypto = require('crypto');
 const fs = require('fs');
 const net = require('net');
 const addon = require('../core/aawp-core.node');
-const C = process.env.AAWP_CONFIG || '/root/clawd/skills/aawp/.agent-config';
-const S = process.env.AAWP_SKILL  || '/root/clawd/skills/aawp';
+const C = process.env.AAWP_CONFIG || require('path').join(__dirname, '..', '.agent-config');
+const S = process.env.AAWP_SKILL || require('path').resolve(__dirname, '..');
 const LOCK = '/tmp/.aawp-daemon.lock';
 
 // Generate random 32-byte AI gate token

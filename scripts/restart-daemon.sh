@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/root/clawd/skills/aawp"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOCK="/tmp/.aawp-daemon.lock"
 OUT="/tmp/aawp-start.out"
 LOG="/tmp/aawp.log"

@@ -19,13 +19,15 @@ if [ ! -f "$ROOT/.agent-config/seed.enc" ]; then
 fi
 
 healthcheck() {
+  AAWP_SKILL="$ROOT" AAWP_CONFIG="$ROOT/.agent-config" AAWP_CORE="$ROOT/core/aawp-core.node" \
   node - <<'NODE'
 const fs = require('fs');
 const net = require('net');
-const addon = require('/root/clawd/skills/aawp/core/aawp-core.node');
+const path = require('path');
+const S = process.env.AAWP_SKILL;
+const C = process.env.AAWP_CONFIG;
+const addon = require(process.env.AAWP_CORE);
 const lockPath = '/tmp/.aawp-daemon.lock';
-const C = process.env.AAWP_CONFIG || '/root/clawd/skills/aawp/.agent-config';
-const S = process.env.AAWP_SKILL || '/root/clawd/skills/aawp';
 
 function fail(msg) {
   console.error(msg);
@@ -80,4 +82,4 @@ if healthcheck > "$OUT" 2>&1; then
 fi
 
 echo "[AAWP] daemon unhealthy — restarting"
-/root/clawd/skills/aawp/scripts/restart-daemon.sh
+"$SCRIPT_DIR/restart-daemon.sh"

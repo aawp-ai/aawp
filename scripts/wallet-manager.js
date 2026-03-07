@@ -58,12 +58,12 @@ for (let i = 0; i < argv.length; i++) {
 process.argv = [process.argv[0], process.argv[1], ...filteredArgv];
 
 // ── Paths & Config ───────────────────────────────────────────────────────────
-const C = process.env.AAWP_CONFIG || '/root/clawd/skills/aawp/.agent-config';
-const S = process.env.AAWP_SKILL  || '/root/clawd/skills/aawp';
+const C = process.env.AAWP_CONFIG || require('path').join(__dirname, '..', '.agent-config');
+const S = process.env.AAWP_SKILL || require('path').resolve(__dirname, '..');
 // Detect restore early — skip native addon entirely (shard may be missing)
 const _earlyCmd = process.argv.slice(2).filter(a => !a.startsWith('--'))[0] || '';
 if (_earlyCmd === 'restore') { require('./restore-impl.js'); process.exit(0); }
-const addon = require(process.env.AAWP_CORE || '/root/clawd/skills/aawp/core/aawp-core.node');
+const addon = require(process.env.AAWP_CORE || require('path').join(__dirname, '..', 'core', 'aawp-core.node'));
 
 // ── Chain Registry ───────────────────────────────────────────────────────────
 const CHAINS_FILE = path.join(S, 'config/chains.json');
@@ -584,7 +584,7 @@ async function sendToken() {
 async function createWallet() {
   const { execSync } = require('child_process');
   const readline = require('readline');
-  const ROOT = '/root/clawd/skills/aawp';
+  const ROOT = require('path').resolve(__dirname, '..');
 
   const chain = getChain();
   if (!chain.deployed || chain.factory === ethers.ZeroAddress) {
@@ -1386,7 +1386,7 @@ Chains: ${chains}
 main().catch(e => {
   const msg = String(e && e.message ? e.message : e);
   if (msg.includes('E_AI_GATE') || msg.includes('hmac_mismatch')) {
-    console.error('❌ Daemon state mismatch — run: /root/clawd/skills/aawp/scripts/restart-daemon.sh');
+    console.error('❌ Daemon state mismatch — run: scripts/restart-daemon.sh (from skill directory)');
   } else if (msg.includes('GenericFailure') || msg.includes('E00')) {
     console.error('❌ Signer seed/config error — check .agent-config and shard files first');
   } else {

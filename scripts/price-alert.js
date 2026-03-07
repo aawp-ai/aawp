@@ -17,7 +17,7 @@ const crypto = require('crypto');
 const https = require('https');
 const { execSync } = require('child_process');
 
-const S = process.env.AAWP_SKILL || '/root/clawd/skills/aawp';
+const S = process.env.AAWP_SKILL || require('path').resolve(__dirname, '..');
 const ALERTS_FILE = path.join(S, '.price-alerts.json');
 const CHAINS = JSON.parse(fs.readFileSync(path.join(S, 'config/chains.json'), 'utf8'));
 
@@ -123,17 +123,30 @@ function parseArgs(args) {
 let _cronRegistered = false;
 function ensureCronRegistered() {
   if (_cronRegistered) return;
+  const checkCmd = `node ${path.join(S, 'scripts/price-alert.js')} check`;
+  // Try OpenClaw cron
   try {
+    execSync(`command -v openclaw`, { stdio: 'pipe' });
     const payload = JSON.stringify({
       name: 'aawp-price-alert-check',
       trigger: { kind: 'cron', expr: '*/5 * * * *', tz: 'Asia/Hong_Kong' },
-      action: { kind: 'agentTurn', message: `Run Price Alert check: node ${path.join(S, 'scripts/price-alert.js')} check` },
+      action: { kind: 'agentTurn', message: `Run Price Alert check: ${checkCmd}` },
     });
     execSync(`openclaw cron add '${payload.replace(/'/g, "'\\''")}'`, { stdio: 'pipe', timeout: 10000 });
     _cronRegistered = true;
-  } catch (e) {
-    console.log(`  ⚠️  Could not register cron. Run manually: node ${path.join(S, 'scripts/price-alert.js')} check`);
-  }
+    return;
+  } catch {}
+  // Fallback: system crontab
+  try {
+    const cronLine = `*/5 * * * * ${checkCmd} >> /tmp/aawp-price-alert.log 2>&1`;
+    const existing = execSync('crontab -l 2>/dev/null || true', { encoding: 'utf8' });
+    if (!existing.includes('aawp-price-alert')) {
+      execSync(`(crontab -l 2>/dev/null; echo '${cronLine}') | crontab -`, { stdio: 'pipe' });
+    }
+    _cronRegistered = true;
+    return;
+  } catch {}
+  console.log(`  ⚠️  No scheduler available. Run manually: ${checkCmd}`);
 }
 
 // ── Commands ─────────────────────────────────────────────────────────────────

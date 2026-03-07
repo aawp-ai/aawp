@@ -22,9 +22,9 @@ const fs   = require('fs');
 const https = require('https');
 
 // ── Shared setup (also used when required from wallet-manager) ────────────────
-const addon = require(process.env.AAWP_CORE || '/root/clawd/skills/aawp/core/aawp-core.node');
-const C = process.env.AAWP_CONFIG || '/root/clawd/skills/aawp/.agent-config';
-const S = process.env.AAWP_SKILL  || '/root/clawd/skills/aawp';
+const addon = require(process.env.AAWP_CORE || require('path').join(__dirname, '..', 'core', 'aawp-core.node'));
+const C = process.env.AAWP_CONFIG || require('path').join(__dirname, '..', '.agent-config');
+const S = process.env.AAWP_SKILL || require('path').resolve(__dirname, '..');
 
 const CHAINS_FILE = path.join(S, 'config/chains.json');
 const CHAINS = JSON.parse(fs.readFileSync(CHAINS_FILE, 'utf8'));

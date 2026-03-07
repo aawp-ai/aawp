@@ -4,8 +4,8 @@ const path = require('path');
 const fs   = require('fs');
 const { execSync } = require('child_process');
 
-const C = process.env.AAWP_CONFIG || '/root/clawd/skills/aawp/.agent-config';
-const S = process.env.AAWP_SKILL  || '/root/clawd/skills/aawp';
+const C = process.env.AAWP_CONFIG || require('path').join(__dirname, '..', '.agent-config');
+const S = process.env.AAWP_SKILL || require('path').resolve(__dirname, '..');
 
 const backupPath = process.argv[3];
 if (!backupPath) { console.log('Usage: wallet-manager restore <backup.tar.gz>'); process.exit(1); }

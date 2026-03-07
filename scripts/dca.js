@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * AAWP DCA — Dollar Cost Averaging via OpenClaw cron
+ * AAWP DCA — Dollar Cost Averaging
+ * Scheduling: OpenClaw cron (preferred) → system crontab (fallback) → manual
  *
  * Usage:
  *   dca.js add --chain base --from ETH --to USDC --amount 0.01 --cron "0 9 * * *" [--name myDCA] [--slippage 0.5]
@@ -16,7 +17,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
 
-const S = process.env.AAWP_SKILL || '/root/clawd/skills/aawp';
+const S = process.env.AAWP_SKILL || require('path').resolve(__dirname, '..');
 const JOBS_FILE    = path.join(S, '.dca-jobs.json');
 const HISTORY_FILE = path.join(S, '.dca-history.json');
 
@@ -56,20 +57,40 @@ function registerCron(job) {
     trigger: { kind: 'cron', expr: job.cron, tz: 'Asia/Hong_Kong' },
     action: { kind: 'agentTurn', message: `Run AAWP DCA: node ${path.join(S, 'scripts/dca.js')} run ${job.id}` },
   });
+  const runCmd = `node ${path.join(S, 'scripts/dca.js')} run ${job.id}`;
+  // Try OpenClaw cron first
   try {
+    execSync(`command -v openclaw`, { stdio: 'pipe' });
     execSync(`openclaw cron add '${cronPayload.replace(/'/g, "'\\''")}'`, { stdio: 'pipe', timeout: 10000 });
+    console.log(`  ✅ Scheduled via OpenClaw cron`);
     return true;
-  } catch (e) {
-    console.log(`  ⚠️  Could not register OpenClaw cron (register manually): ${e.message?.split('\n')[0]}`);
-    console.log(`  Cron expression: ${job.cron}`);
-    console.log(`  Command: node ${path.join(S, 'scripts/dca.js')} run ${job.id}`);
-    return false;
-  }
+  } catch { /* OpenClaw not available */ }
+  // Fallback: system crontab
+  try {
+    const cronLine = `${job.cron} ${runCmd} >> /tmp/aawp-dca.log 2>&1`;
+    const existing = execSync('crontab -l 2>/dev/null || true', { encoding: 'utf8' });
+    if (!existing.includes(job.id)) {
+      execSync(`(crontab -l 2>/dev/null; echo '${cronLine}') | crontab -`, { stdio: 'pipe' });
+      console.log(`  ✅ Scheduled via system crontab`);
+      return true;
+    }
+    return true;
+  } catch { /* crontab not available */ }
+  // Manual fallback
+  console.log(`  ⚠️  No scheduler available. Run manually or add to crontab:`);
+  console.log(`  Cron: ${job.cron}`);
+  console.log(`  Command: ${runCmd}`);
+  return false;
 }
 
 function removeCron(jobId) {
+  // Try OpenClaw
+  try { execSync(`openclaw cron remove aawp-dca-${jobId}`, { stdio: 'pipe', timeout: 10000 }); return; } catch {}
+  // Try system crontab
   try {
-    execSync(`openclaw cron remove aawp-dca-${jobId}`, { stdio: 'pipe', timeout: 10000 });
+    const existing = execSync('crontab -l 2>/dev/null', { encoding: 'utf8' });
+    const filtered = existing.split('\n').filter(l => !l.includes(jobId)).join('\n');
+    execSync(`echo '${filtered}' | crontab -`, { stdio: 'pipe' });
   } catch { /* best effort */ }
 }
 
