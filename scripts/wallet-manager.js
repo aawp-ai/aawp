@@ -902,10 +902,7 @@ async function backup() {
 
   const candidates = [
     path.join(C, 'seed.enc'),
-    '/var/lib/aawp/.cache/fonts.idx',
-    path.join(S, 'core/aawp-core.node'),
-    path.join(S, 'core/aawp-core.node.hash'),
-    path.join(S, 'config/chains.json'),
+    path.join(S, 'config/guardian.json'),
   ];
 
   const files = candidates.filter(f => fs.existsSync(f));
