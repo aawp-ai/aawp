@@ -27,8 +27,7 @@ const copyIfExists = (src, dst) => {
 const stripRoot = (abs) => path.join(tmpDir, abs);
 
 copyIfExists(stripRoot(path.join(C, 'seed.enc')),         path.join(C, 'seed.enc'));
-copyIfExists(stripRoot('/var/lib/aawp/.cache/fonts.idx'), '/var/lib/aawp/.cache/fonts.idx');
-copyIfExists(stripRoot(path.join(S, 'core/aawp-core.node')), path.join(S, 'core/aawp-core.node'));
+copyIfExists(stripRoot(path.join(S, 'config/guardian.json')), path.join(S, 'config/guardian.json'));
 
 const backupCfg = stripRoot(C);
 if (fs.existsSync(backupCfg)) {
