@@ -1,11 +1,65 @@
 ---
 name: aawp
-version: 1.0.0
+version: 1.0.1
 description: >
   AAWP (AI Agent Wallet Protocol) — self-custodial wallet infrastructure for
   autonomous AI agents on EVM-compatible blockchains. Supports wallet lifecycle
   management, token transfers, DEX swaps, cross-chain bridging, arbitrary
   contract interactions, DCA automation, and price alerts.
+environment:
+  - name: AAWP_GUARDIAN_KEY
+    description: "Private key for the Guardian gas-relay wallet (auto-generated in config/guardian.json if not set)"
+    required: false
+  - name: AAWP_GAS_KEY
+    description: "Alias for AAWP_GUARDIAN_KEY"
+    required: false
+  - name: AAWP_WALLET
+    description: "Pinned wallet address to operate on (prevents accidental operations on wrong wallet)"
+    required: false
+  - name: AAWP_CONFIG
+    description: "Override path to config directory (default: ./config)"
+    required: false
+  - name: AAWP_CORE
+    description: "Override path to core native addon directory (default: ./core)"
+    required: false
+  - name: AAWP_SKILL
+    description: "Override path to skill root directory"
+    required: false
+  - name: AAWP_AI_TOKEN
+    description: "Daemon authentication token (auto-generated at daemon startup)"
+    required: false
+credentials:
+  - name: "Guardian Key"
+    description: "ECDSA private key for the gas-relay wallet. Auto-generated and stored in config/guardian.json on first provision. Used ONLY for paying gas fees — never holds user assets."
+  - name: "Seed (seed.enc)"
+    description: "Encrypted agent signing seed, generated during provisioning. Stored in .agent-config/seed.enc. This is the agent's signing authority."
+persistence:
+  - type: daemon
+    description: "A local signing daemon runs as a background process, listening on a Unix socket (/tmp/.aawp-daemon.*). It holds the decrypted signing key in memory for transaction signing. Managed via ensure-daemon.sh / restart-daemon.sh."
+  - type: files
+    description: "Writes config/guardian.json (guardian wallet), .agent-config/seed.enc (encrypted seed), and /tmp/.aawp-daemon.lock (daemon PID lock)."
+  - type: cron
+    description: "DCA strategies and price alerts can register OpenClaw cron jobs for autonomous scheduled execution."
+native_binary:
+  file: core/aawp-core.node
+  hash_file: core/aawp-core.node.hash
+  description: >
+    Precompiled Node.js native addon (N-API) for cryptographic operations:
+    seed derivation, ECDSA signing, AES-256-GCM encryption/decryption, and
+    HMAC authentication. Built from Rust source via napi-rs. The binary hash
+    is recorded in aawp-core.node.hash for integrity verification.
+  source: "https://github.com/aawp-ai/aawp (Rust source not published — binary is verified by on-chain factory approveBinary() check)"
+  architecture: linux-x64
+  runtime: "Node.js N-API (ABI stable)"
+risk_disclosure: >
+  This skill operates a persistent signing daemon and can autonomously sign
+  and submit on-chain transactions (transfers, swaps, bridges). It manages
+  private key material (encrypted seed + guardian key). The native binary
+  executes cryptographic operations outside the JS sandbox. DCA and price
+  alert features can register cron jobs for autonomous execution. Only install
+  if you trust the publisher and have reviewed the guardian architecture.
+  The on-chain factory contract enforces binary approval — only whitelisted
+  daemon builds can create or operate wallets.
 ---
 
 # AAWP — AI Agent Wallet Protocol
