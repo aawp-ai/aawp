@@ -321,7 +321,8 @@ Verified on: Etherscan · BaseScan · BscScan · PolygonScan · Optimistic Ether
 | `InvalidSignature` | Verify signer alignment and binary approval on factory |
 | `Call failed` | Check balance, gas, and transaction parameters |
 | `E40` / `E41` | Kill duplicate daemon process, then restart |
-| `BinaryNotApproved` | Factory owner must call `approveBinary(hash)` |
+| `BinaryNotApproved` | Factory owner must call `approveBinary(hash)` on all 6 chains |
+| TX reverts with ~1M gas used | Add `--gas-limit 8000000` — Clanker V4 / Uniswap V4 ops need up to 6M |
 
 ---
 
