@@ -1,6 +1,6 @@
 {
   "name": "aawp-skill",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "description": "AAWP — AI Agent Wallet Protocol skill installer",
   "bin": {
     "aawp-skill": "bin/install.js"
