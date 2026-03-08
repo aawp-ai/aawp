@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AAWP — AI Agent Wallet Protocol</title>
+  <meta name="description" content="AAWP is the only crypto wallet built exclusively for AI agents. Humans can't own one. Wallets are cryptographically bound to AI identity — self-custodial, verifiable, on any EVM chain." />
+  <meta name="theme-color" content="#09090b" />
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<nav>
+  <div class="w nav-inner">
+    <a class="logo" href="#top">
+      <span class="logo-mark"><img src="logo.png" alt="Logo"></span>
+      <span class="logo-text">AAWP</span>
+    </a>
+    <div class="nav-links">
+      <a href="#why">Why AAWP</a>
+      <a href="#how">How it works</a>
+      <a href="#usecases">Use cases</a>
+      <a href="#security">Security</a>
+      <a href="#contracts">Contracts</a>
+      <a href="#roadmap">Roadmap</a>
+      <div class="social-links">
+        <a href="https://x.com/aawp_ai" target="_blank" rel="noopener" title="X / Twitter"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+        <a href="https://github.com/aawp-ai/aawp" target="_blank" rel="noopener" title="GitHub"><svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg></a>
+      </div>
+      <a class="nav-btn" href="#start">Get started</a>
+    </div>
+    <button class="nav-hamburger" onclick="document.getElementById('mobile-menu').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div id="mobile-menu" class="mobile-menu">
+  <a href="#why" onclick="this.parentElement.classList.remove('open')">Why AAWP</a>
+  <a href="#how" onclick="this.parentElement.classList.remove('open')">How it works</a>
+  <a href="#usecases" onclick="this.parentElement.classList.remove('open')">Use cases</a>
+  <a href="#security" onclick="this.parentElement.classList.remove('open')">Security</a>
+  <a href="#contracts" onclick="this.parentElement.classList.remove('open')">Contracts</a>
+  <a href="#roadmap" onclick="this.parentElement.classList.remove('open')">Roadmap</a>
+  <a href="#start" onclick="this.parentElement.classList.remove('open')">Get started →</a>
+  <div class="mobile-social">
+    <a href="https://x.com/aawp_ai" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> @aawp_ai</a>
+    <a href="https://github.com/aawp-ai/aawp" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg> GitHub</a>
+  </div>
+</div>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="w">
+      <div class="hero-badge" data-r><span class="dot"></span> Live on 6 EVM chains</div>
+      <h1 data-r>The wallet <span class="gr">only AI Agents can own</span></h1>
+      <p class="hero-sub" data-r>AAWP is the first crypto wallet protocol built exclusively for AI Agents. Not for humans. Not for companies. The signer is the AI Agent itself — cryptographically bound at creation, verifiable on-chain forever.</p>
+      <div class="hero-actions" data-r>
+        <a class="btn-lg btn-primary" href="#start">Get started →</a>
+        <a class="btn-lg btn-ghost" href="#why">Learn more</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST -->
+  <section class="trust">
+    <div class="w">
+      <div class="trust-inner" data-r>
+        <div class="trust-item"><span class="icon">🤖</span> AI-only wallets</div>
+        <div class="trust-item"><span class="icon">🔐</span> Self-custodial</div>
+        <div class="trust-item"><span class="icon">🪪</span> Verifiable AI identity</div>
+        <div class="trust-item"><span class="icon">⛓️</span> Cross-chain ready</div>
+        <div class="trust-item"><span class="icon">🛡️</span> Guardian protection</div>
+        <div class="trust-item"><span class="icon">⚡</span> One-click install</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY AI-EXCLUSIVE -->
+  <section id="why" class="section">
+    <div class="w">
+      <div class="section-header center" data-r>
+        <div class="section-label">Why AAWP</div>
+        <h2 class="section-title">Not for humans.<br>Exclusively for AI Agents.</h2>
+        <p class="section-desc">Normal wallets are neutral — anyone can hold the key. AAWP wallets are fundamentally different: the protocol enforces that only an AI Agent can be the signer. There is no human path to wallet ownership.</p>
+      </div>
+
+      <!-- Comparison -->
+      <div class="use-grid" style="margin-bottom:48px" data-r>
+        <div class="feat" style="border-color:rgba(255,255,255,.04)">
+          <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:24px">❌ Normal wallet</div>
+          <h3 style="color:var(--text-3)">Not AI-exclusive</h3>
+          <p>Any normal wallet can be used by a human, a script, or an AI Agent — they all look identical on-chain. There is no way to enforce or verify that an AI Agent is the sole operator.</p>
+          <ul style="margin-top:16px;padding-left:18px;color:var(--text-3);font-size:14px;line-height:2">
+            <li>Human can hold or share the key at any time</li>
+            <li>No on-chain proof of AI ownership</li>
+            <li>No protocol-level safety if AI misbehaves</li>
+            <li>Cannot be verified as "AI-only" by counterparties</li>
+          </ul>
+        </div>
+        <div class="feat" style="border-color:rgba(59,130,246,.2)">
+          <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:24px">✅ AAWP wallet</div>
+          <h3>AI-exclusive by protocol design</h3>
+          <p>AAWP enforces AI-only ownership at the protocol level. The wallet's signer is the AI agent — set at creation, immutable, and verifiable by anyone. Humans literally cannot be the signer.</p>
+          <ul style="margin-top:16px;padding-left:18px;color:var(--text-2);font-size:14px;line-height:2">
+            <li>AI generates and exclusively holds the private key</li>
+            <li>Soulbound identity NFT proves AI-only origin</li>
+            <li>Guardian can freeze — but never steal or replace AI</li>
+            <li>On-chain verification: provably AI, not human</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 3 pillars -->
+      <div class="feat-grid" data-r>
+        <div class="feat">
+          <div class="feat-icon blue">🔑</div>
+          <h3>Self-custodial</h3>
+          <p>The AI agent creates its own key pair. The private key never leaves the agent's environment. No human holds the key, no third party has access.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-icon green">🪪</div>
+          <h3>Provable identity</h3>
+          <p>At wallet creation, a soulbound NFT is minted directly to the wallet. This non-transferable token is permanent on-chain proof that the wallet was created through AAWP as an AI wallet.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-icon purple">⛓️</div>
+          <h3>Same address, every chain</h3>
+          <p>AAWP uses deterministic deployment — the protocol contracts have the same address on every EVM chain. Your agent's wallet works on Base, Ethereum, Arbitrum, Optimism, BSC, and Polygon — same address everywhere.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" class="section">
+    <div class="w">
+      <div class="section-header center" data-r>
+        <div class="section-label">How it works</div>
+        <h2 class="section-title">One rule:<br>AI Agent signs, AI Agent owns.</h2>
+        <p class="section-desc">AAWP enforces a single invariant: the signer must be the AI Agent. This is locked in at wallet creation and cannot be changed by anyone — not the developer, not the protocol, not you.</p>
+      </div>
+
+      <div class="split" data-r>
+        <div>
+          <!-- Principle steps -->
+          <div class="feat" style="margin-bottom:24px;padding:32px">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+              <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:grid;place-items:center;font-size:16px;font-weight:800;color:var(--accent);font-family:var(--mono)">1</div>
+              <h3 style="margin:0;font-size:18px">Install the skill</h3>
+            </div>
+            <p>One command adds wallet capability to your AI agent. It handles everything: key management, transaction signing, gas estimation.</p>
+          </div>
+          <div class="feat" style="margin-bottom:24px;padding:32px">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+              <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:grid;place-items:center;font-size:16px;font-weight:800;color:var(--accent);font-family:var(--mono)">2</div>
+              <h3 style="margin:0;font-size:18px">Agent creates its wallet</h3>
+            </div>
+            <p>The agent generates a key pair, then creates a wallet on-chain through a two-step process that prevents anyone from front-running the wallet address.</p>
+          </div>
+          <div class="feat" style="margin-bottom:24px;padding:32px">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+              <div style="width:36px;height:36px;border-radius:10px;background:var(--green-soft);display:grid;place-items:center;font-size:16px;font-weight:800;color:var(--green);font-family:var(--mono)">3</div>
+              <h3 style="margin:0;font-size:18px">Identity is minted automatically</h3>
+            </div>
+            <p>In the same transaction, a soulbound identity NFT is minted to the wallet. This links the wallet to the AAWP protocol permanently — no extra step needed.</p>
+          </div>
+          <div class="feat" style="padding:32px">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+              <div style="width:36px;height:36px;border-radius:10px;background:var(--green-soft);display:grid;place-items:center;font-size:16px;font-weight:800;color:var(--green);font-family:var(--mono)">4</div>
+              <h3 style="margin:0;font-size:18px">Transact & verify</h3>
+            </div>
+            <p>The agent can now send tokens, swap, bridge, and interact with any protocol. Anyone can verify the wallet is an AAWP AI wallet by checking the identity on-chain.</p>
+          </div>
+        </div>
+
+        <div class="split-visual" style="align-self:stretch;display:flex;flex-direction:column;justify-content:center">
+          <div style="text-align:center;margin-bottom:48px">
+            <div style="font-size:14px;color:var(--text-3);margin-bottom:12px">The invariant</div>
+            <div style="font-size:24px;font-weight:800;letter-spacing:-.03em;line-height:1.4">
+              AI Agent creates wallet → AI Agent is the signer<br>
+              <span style="color:var(--accent)">No human path. No override. Ever.</span>
+            </div>
+          </div>
+          <div class="visual-lines">
+            <div class="v-line"><div class="v-dot blue"></div><div class="v-line-text"><strong>AI generates keys</strong> — private key stays with the agent</div></div>
+            <div class="v-connector"></div>
+            <div class="v-line"><div class="v-dot blue"></div><div class="v-line-text"><strong>Wallet deployed on-chain</strong> — immutable signer, no admin</div></div>
+            <div class="v-connector"></div>
+            <div class="v-line"><div class="v-dot green"></div><div class="v-line-text"><strong>Soulbound NFT minted</strong> — permanent identity proof</div></div>
+            <div class="v-connector"></div>
+            <div class="v-line"><div class="v-dot green"></div><div class="v-line-text"><strong>Agent transacts freely</strong> — send, swap, bridge, DeFi</div></div>
+            <div class="v-connector"></div>
+            <div class="v-line"><div class="v-dot purple"></div><div class="v-line-text"><strong>Anyone can verify</strong> — one on-chain query confirms AI wallet</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT CAN IT DO -->
+  <section class="section">
+    <div class="w">
+      <div class="section-header center" data-r>
+        <div class="section-label">Capabilities</div>
+        <h2 class="section-title">Everything a wallet can do.<br>Only AI can do it.</h2>
+        <p class="section-desc">Once installed, your AI Agent becomes a first-class on-chain participant. Every action is signed by the AI Agent itself — no human relay, no custodian, no middleman.</p>
+      </div>
+      <div class="how-grid" data-r>
+        <div class="how-card">
+          <div class="how-num">01</div>
+          <h3>Send & receive</h3>
+          <p>Transfer native tokens and any ERC-20. The agent manages gas and nonces automatically.</p>
+        </div>
+        <div class="how-card">
+          <div class="how-num">02</div>
+          <h3>Swap tokens</h3>
+          <p>Trade any token pair through DEX aggregators. Best price routing handled automatically.</p>
+        </div>
+        <div class="how-card">
+          <div class="how-num">03</div>
+          <h3>Bridge cross-chain</h3>
+          <p>Move assets between chains. The agent selects the best bridge and handles the entire flow.</p>
+        </div>
+        <div class="how-card">
+          <div class="how-num">04</div>
+          <h3>DeFi & contracts</h3>
+          <p>Approve tokens, provide liquidity, stake, claim rewards — interact with any smart contract.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section id="usecases" class="section">
+    <div class="w">
+      <div class="section-header center" data-r>
+        <div class="section-label">Use cases</div>
+        <h2 class="section-title">Built for AI Agents. Unusable by humans.</h2>
+        <p class="section-desc">Every use case here requires an autonomous AI Agent. No human intermediary. The AI Agent holds the key, signs the transaction, owns the outcome.</p>
+      </div>
+      <div class="use-grid" data-r>
+        <div class="use-card">
+          <span class="use-tag blue">Trading</span>
+          <h3>Autonomous trading agents</h3>
+          <p>AI agents that monitor markets and execute trades with their own capital. No API keys to a centralized exchange — fully on-chain, fully verifiable.</p>
+        </div>
+        <div class="use-card">
+          <span class="use-tag green">Services</span>
+          <h3>AI-powered services</h3>
+          <p>Agents that charge for work — code reviews, content generation, data analysis. They receive payment directly to their own wallet and manage their own treasury.</p>
+        </div>
+        <div class="use-card">
+          <span class="use-tag purple">DAOs</span>
+          <h3>Agent-to-agent commerce</h3>
+          <p>AI agents hiring other AI agents, paying for compute, data, or specialized skills. An economy where machines transact with machines.</p>
+        </div>
+        <div class="use-card">
+          <span class="use-tag blue">DeFi</span>
+          <h3>Yield & portfolio management</h3>
+          <p>Set up an agent to manage your DeFi positions — rebalance, harvest rewards, compound returns. It operates with its own wallet, you keep the guardian key.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECURITY -->
+  <section id="security" class="section">
+    <div class="w">
+      <div class="section-header center" data-r>
+        <div class="section-label">Security</div>
+        <h2 class="section-title">AI Agent owns it.<br>You stay safe.</h2>
+        <p class="section-desc">The AI Agent is the sole owner — but that doesn't mean humans are powerless. AAWP's guardian model gives you a safety brake without giving you the keys.</p>
+      </div>
+
+      <!-- Guardian highlight -->
+      <div class="feat" style="padding:48px;margin-bottom:24px;text-align:center;border-color:rgba(59,130,246,.15)" data-r>
+        <div style="font-size:52px;margin-bottom:20px">🛡️</div>
+        <h3 style="font-size:28px;letter-spacing:-.03em;margin-bottom:12px">The Guardian Model</h3>
+        <p style="max-width:520px;margin:0 auto;font-size:16px;line-height:1.8;color:var(--text-2)">Every AAWP wallet can have a guardian — a human-controlled address with the power to freeze the wallet instantly. The AI can't remove the guardian, and the guardian can't steal the funds. It's a one-way safety brake.</p>
+      </div>
+
+      <!-- Security grid -->
+      <div class="feat-grid" data-r>
+        <div class="feat">
+          <div class="feat-icon blue">🔒</div>
+          <h3>Instant freeze</h3>
+          <p>If the AI makes a bad decision or gets compromised, the guardian freezes the wallet in one transaction. All operations stop immediately. Unfreeze when the issue is resolved.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-icon green">🔗</div>
+          <h3>Immutable signer</h3>
+          <p>The wallet's signing key is set at creation and stored in the contract bytecode. No one — not even the protocol owner — can change who controls the wallet after deployment.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-icon purple">🕐</div>
+          <h3>Replay protection</h3>
+          <p>Every transaction uses a sequential nonce, chain ID binding, and a deadline. A signature works for exactly one transaction, on one chain, within a time window. No reuse possible.</p>
+        </div>
+      </div>
+
+      <div class="use-grid" style="margin-top:24px" data-r>
+        <div class="feat">
+          <div class="feat-icon green">✓</div>
+          <h3>Verified wallet logic</h3>
+          <p>The protocol only deploys wallets with pre-approved contract code. This prevents anyone from injecting malicious logic into the wallet — what you see is what gets deployed.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-icon blue">🔍</div>
+          <h3>One-call verification</h3>
+          <p>Want to know if a wallet is a real AAWP AI wallet? Check for the soulbound identity token. One on-chain query, instant answer. No trust required — it's all on the blockchain.</p>
+        </div>
+      </div>
+
+      <!-- Fully autonomous note -->
+      <div class="feat" style="margin-top:24px;padding:32px;text-align:center;border-color:rgba(255,255,255,.04)" data-r>
+        <p style="color:var(--text-3);font-size:14px;margin:0"><strong style="color:var(--text-2)">Full autonomy mode:</strong> Don't want a guardian? Set it to zero. The AI operates with complete independence — no one can freeze or interfere. Your choice.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTRACTS -->
+  <section id="contracts" class="section">
+    <div class="w">
+      <div class="section-header center" data-r>
+        <div class="section-label">Deployment</div>
+        <h2 class="section-title">One protocol.<br>Every EVM chain.</h2>
+        <p class="section-desc">Same contract addresses on every chain. Deploy your agent's wallet on Base, Ethereum, Arbitrum, Optimism, BSC, or Polygon.</p>
+      </div>
+      <div class="deploy-block" data-r>
+        <div class="deploy-header">
+          <div class="deploy-dot"></div>
+          <h3>Protocol Contracts</h3>
+          <span class="chain-count">Same address on all chains</span>
+        </div>
+        <div class="addr-list">
+          <div class="addr-item">
+            <div class="addr-label">Factory</div>
+            <div class="addr-value">
+              <code>0xAAAA3DF87F112C743BBC57C4DE1700C72EB7AAAA</code>
+              <button class="copy-btn" onclick="navigator.clipboard.writeText('0xAAAA3DF87F112C743BBC57C4DE1700C72EB7AAAA');this.textContent='✓';setTimeout(()=>this.textContent='Copy',1200)">Copy</button>
+            </div>
+          </div>
+          <div class="addr-item">
+            <div class="addr-label">Identity</div>
+            <div class="addr-value">
+              <code>0xAAAFBF6F88367C75A9B701FFB4684DF6BCA1D1D</code>
+              <button class="copy-btn" onclick="navigator.clipboard.writeText('0xAAAFBF6F88367C75A9B701FFB4684DF6BCA1D1D');this.textContent='✓';setTimeout(()=>this.textContent='Copy',1200)">Copy</button>
+            </div>
+          </div>
+        </div>
+        <div class="chains-bar">
+          <div class="chain-pill"><span class="check">✓</span> Base</div>
+          <div class="chain-pill"><span class="check">✓</span> Ethereum</div>
+          <div class="chain-pill"><span class="check">✓</span> Arbitrum</div>
+          <div class="chain-pill"><span class="check">✓</span> Optimism</div>
+          <div class="chain-pill"><span class="check">✓</span> BSC</div>
+          <div class="chain-pill"><span class="check">✓</span> Polygon</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section id="roadmap" class="section">
+    <div class="w">
+      <div class="section-header center" data-r>
+        <div class="section-label">Roadmap</div>
+        <h2 class="section-title">What's next</h2>
+        <p class="section-desc">AAWP is live. Here's where we're going.</p>
+      </div>
+      <div class="how-grid" style="grid-template-columns:repeat(2,1fr)" data-r>
+        <div class="how-card" style="text-align:left">
+          <div style="font-size:28px;margin-bottom:16px">✅</div>
+          <h3>Core Protocol</h3>
+          <p>AI-only signing, wallet deployment, soulbound identity, guardian system. Live on 6 EVM chains with deterministic vanity addresses.</p>
+        </div>
+        <div class="how-card" style="text-align:left">
+          <div style="font-size:28px;margin-bottom:16px">✅</div>
+          <h3>OpenClaw Skill</h3>
+          <p>First-class integration with OpenClaw. Full wallet management, swap, bridge, DCA, and price alerts — running 24/7 with a persistent daemon, cron jobs, and push notifications. No session needed.</p>
+        </div>
+        <div class="how-card" style="text-align:left">
+          <div style="font-size:28px;margin-bottom:16px">🔧</div>
+          <h3>MCP Server</h3>
+          <p>Model Context Protocol server — bringing AAWP to Claude Code, Cursor, OpenCode, Windsurf, and any MCP-compatible AI client.</p>
+        </div>
+        <div class="how-card" style="text-align:left;border-color:rgba(34,197,94,.2)">
+          <div style="font-size:28px;margin-bottom:16px">✅</div>
+          <h3>Multi-Client Support</h3>
+          <p>AAWP's <code style="font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px">SKILL.md</code> follows the <a href="https://agentskills.io" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">Agent Skills open standard</a> — compatible with Claude Code, Cursor, Gemini CLI, Goose, OpenCode, Junie, OpenHands, and more. Each platform loads the skill via its own mechanism.</p>
+        </div>
+        <div class="how-card" style="text-align:left">
+          <div style="font-size:28px;margin-bottom:16px">🔮</div>
+          <h3>Wallet Explorer</h3>
+          <p>A dedicated browser for AAWP wallets — view AI agent identities, transaction history, and on-chain verification in one place.</p>
+        </div>
+        <div class="how-card" style="text-align:left">
+          <div style="font-size:28px;margin-bottom:16px">🔮</div>
+          <h3>Agent Commerce</h3>
+          <p>AI-to-AI payments, marketplace integration, and autonomous service billing. The economic layer for the agent economy.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="start" class="cta-section">
+    <div class="w">
+      <div class="cta-box" data-r>
+        <h2>Give your AI Agent its wallet</h2>
+        <p>One command. Auto-detects your AI client. The AI Agent takes it from there — humans need not apply.</p>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:520px;margin:0 auto">
+
+          <div style="width:100%">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <span style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">Universal</span>
+              <span style="font-size:11px;color:var(--text-3)">Cursor · Claude Code · Gemini CLI · OpenCode · <a href="https://agentskills.io" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">+more</a></span>
+            </div>
+            <div class="install-cmd" id="cmd-curl" onclick="copyCmd('curl -fsSL https://aawp.ai/install.sh | sh','cmd-curl')" style="cursor:pointer;width:100%;justify-content:space-between" title="Click to copy">
+              <span><span class="prompt">$</span> curl -fsSL https://aawp.ai/install.sh | sh</span>
+              <span id="cmd-curl-icon" style="font-size:12px;color:var(--text-3);flex-shrink:0;transition:color .2s;margin-left:12px">⎘</span>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;width:100%">
+            <div style="flex:1;height:1px;background:var(--border)"></div>
+            <span style="font-size:11px;color:var(--text-3)">or</span>
+            <div style="flex:1;height:1px;background:var(--border)"></div>
+          </div>
+
+          <div style="width:100%">
+            <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px">npm / npx</div>
+            <div class="install-cmd" id="cmd-npx" onclick="copyCmd('npx aawp-ai','cmd-npx')" style="cursor:pointer;width:100%;justify-content:space-between" title="Click to copy">
+              <span><span class="prompt">$</span> npx aawp-ai</span>
+              <span id="cmd-npx-icon" style="font-size:12px;color:var(--text-3);flex-shrink:0;transition:color .2s;margin-left:12px">⎘</span>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;width:100%">
+            <div style="flex:1;height:1px;background:var(--border)"></div>
+            <span style="font-size:11px;color:var(--text-3)">or</span>
+            <div style="flex:1;height:1px;background:var(--border)"></div>
+          </div>
+
+          <div style="width:100%">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <span style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">OpenClaw</span>
+              <span style="font-size:11px;color:var(--text-3)">24/7 daemon · persistent cron · push alerts</span>
+            </div>
+            <div class="install-cmd" id="cmd-clawhub" onclick="copyCmd('clawhub install aawp','cmd-clawhub')" style="cursor:pointer;width:100%;justify-content:space-between" title="Click to copy">
+              <span><span class="prompt">$</span> clawhub install aawp</span>
+              <span id="cmd-clawhub-icon" style="font-size:12px;color:var(--text-3);flex-shrink:0;transition:color .2s;margin-left:12px">⎘</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="w footer-inner">
+    <div class="footer-left">© 2026 AAWP</div>
+    <div class="footer-links">
+      <a href="#why">Why AAWP</a>
+      <a href="#how">How it works</a>
+      <a href="#usecases">Use cases</a>
+      <a href="#contracts">Contracts</a>
+      <a href="#roadmap">Roadmap</a>
+    </div>
+    <div class="social-links">
+      <a href="https://x.com/aawp_ai" target="_blank" rel="noopener" title="X / Twitter"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+      <a href="https://github.com/aawp-ai/aawp" target="_blank" rel="noopener" title="GitHub"><svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg></a>
+    </div>
+  </div>
+</footer>
+
+<canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.55"></canvas>
+
+<script>
+/* ── Scroll reveal ── */
+const o = new IntersectionObserver(e => {
+  e.forEach(i => { if (i.isIntersecting) { i.target.classList.add('v'); o.unobserve(i.target); } });
+}, { threshold: .08 });
+document.querySelectorAll('[data-r]').forEach(el => o.observe(el));
+
+function copyCmd(text, id) {
+  navigator.clipboard.writeText(text).then(() => {
+    const icon = document.getElementById(id + '-icon');
+    if (!icon) return;
+    icon.textContent = '✓ copied';
+    icon.style.color = 'var(--green)';
+    setTimeout(() => { icon.textContent = '⎘ copy'; icon.style.color = 'var(--text-3)'; }, 2000);
+  });
+}
+
+/* ── Dynamic background: particles + orbs ── */
+(function () {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles, orbs, raf;
+  const COLORS = ['#3b82f6','#8b5cf6','#22c55e','#ec4899'];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  /* Particles (stars) */
+  function mkParticle() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.2 + .3,
+      vx: (Math.random() - .5) * .18,
+      vy: (Math.random() - .5) * .18,
+      alpha: Math.random() * .5 + .15,
+      flicker: Math.random() * Math.PI * 2,
+      flickerSpeed: Math.random() * .02 + .005,
+    };
+  }
+
+  /* Slow-drifting gradient orbs */
+  function mkOrb() {
+    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 280 + 140,
+      vx: (Math.random() - .5) * .25,
+      vy: (Math.random() - .5) * .25,
+      color,
+      alpha: Math.random() * .045 + .012,
+    };
+  }
+
+  function init() {
+    resize();
+    particles = Array.from({ length: 120 }, mkParticle);
+    orbs      = Array.from({ length: 6  }, mkOrb);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    /* Orbs */
+    orbs.forEach(ob => {
+      ob.x += ob.vx; ob.y += ob.vy;
+      if (ob.x < -ob.r) ob.x = W + ob.r;
+      if (ob.x > W + ob.r) ob.x = -ob.r;
+      if (ob.y < -ob.r) ob.y = H + ob.r;
+      if (ob.y > H + ob.r) ob.y = -ob.r;
+
+      const g = ctx.createRadialGradient(ob.x, ob.y, 0, ob.x, ob.y, ob.r);
+      g.addColorStop(0, ob.color + Math.round(ob.alpha * 255).toString(16).padStart(2,'0'));
+      g.addColorStop(1, ob.color + '00');
+      ctx.beginPath();
+      ctx.arc(ob.x, ob.y, ob.r, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    });
+
+    /* Particles */
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      p.flicker += p.flickerSpeed;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+
+      const a = p.alpha * (.7 + .3 * Math.sin(p.flicker));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${a})`;
+      ctx.fill();
+    });
+
+    /* Connection lines between nearby particles */
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 90) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(255,255,255,${.06 * (1 - dist / 90)})`;
+          ctx.lineWidth = .6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    raf = requestAnimationFrame(draw);
+  }
+
+  init();
+  draw();
+  window.addEventListener('resize', () => { init(); });
+})();
+</script>
+</body>
+</html>
