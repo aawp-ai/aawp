@@ -761,6 +761,73 @@ async function createWallet() {
     } catch (_) {}
   }
   await status();
+
+  // ── Auto-backup on wallet creation ────────────────────────────────────────
+  console.log('\n');
+  console.log('╔══════════════════════════════════════════════════════════════╗');
+  console.log('║  🔐 AUTO-BACKUP — CRITICAL SECURITY NOTICE                  ║');
+  console.log('╠══════════════════════════════════════════════════════════════╣');
+  console.log('║  Your wallet was just created. An automatic backup is       ║');
+  console.log('║  being generated now.                                        ║');
+  console.log('║                                                              ║');
+  console.log('║  ⚠️  THE BACKUP FILE = YOUR WALLET.                         ║');
+  console.log('║  Anyone with this file can restore and control your         ║');
+  console.log('║  on-chain wallet. Treat it like a private key.              ║');
+  console.log('╚══════════════════════════════════════════════════════════════╝');
+  console.log('');
+
+  let backupResult;
+  try {
+    const ROOT = require('path').resolve(__dirname, '..');
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    // Save backup temporarily in /tmp to make it explicit it must be moved
+    process.argv[3] = `/tmp/aawp-backup-${today}-${Date.now()}.tar.gz`;
+    backupResult = await backup();
+  } catch (e) {
+    console.log(`\n❌ Auto-backup FAILED: ${e.message}`);
+    console.log('   ⚠️  Please run backup manually IMMEDIATELY:');
+    console.log('   node scripts/wallet-manager.js backup ./my-backup.tar.gz');
+    return;
+  }
+
+  console.log('');
+  console.log('╔══════════════════════════════════════════════════════════════╗');
+  console.log('║  📦 BACKUP CREATED — ACTION REQUIRED                        ║');
+  console.log('╠══════════════════════════════════════════════════════════════╣');
+  console.log(`║  File   : ${backupResult.outPath.padEnd(51)}║`);
+  console.log(`║  SHA256 : ${backupResult.sha.padEnd(51)}║`);
+  console.log('╠══════════════════════════════════════════════════════════════╣');
+  console.log('║  NEXT STEPS (do this NOW):                                  ║');
+  console.log('║  1. Download this file to your local machine (SCP/SFTP)     ║');
+  console.log('║  2. Verify the SHA256 matches after download                ║');
+  console.log('║  3. Store it in a safe place (encrypted drive, cold storage)║');
+  console.log('║  4. The server copy will now be DELETED for your security   ║');
+  console.log('╚══════════════════════════════════════════════════════════════╝');
+  console.log('');
+  console.log(`  SCP command:  scp root@<server>:${backupResult.outPath} ./aawp-wallet-backup.tar.gz`);
+  console.log('');
+
+  // Wait for user confirmation before deleting server backup
+  const rl2 = require('readline').createInterface({ input: process.stdin, output: process.stdout });
+  const confirm = await new Promise(resolve =>
+    rl2.question('  ✅ Type YES to confirm you have downloaded the backup and delete the server copy: ', resolve)
+  );
+  rl2.close();
+
+  if (confirm.trim().toUpperCase() === 'YES') {
+    try {
+      fs.unlinkSync(backupResult.outPath);
+      console.log('🗑️  Server copy deleted. The backup only exists on YOUR local machine now.');
+    } catch (e) {
+      console.log(`⚠️  Could not delete server copy: ${e.message}`);
+      console.log(`   Please delete manually: rm "${backupResult.outPath}"`);
+    }
+  } else {
+    console.log(`⚠️  Skipped deletion. Backup still on server at: ${backupResult.outPath}`);
+    console.log('   Delete it manually once you have a local copy:');
+    console.log(`   rm "${backupResult.outPath}"`);
+  }
+  console.log('');
 }
 
 async function computeAddr() {
@@ -976,6 +1043,7 @@ async function backup() {
   console.log('   Files :', count);
   console.log('   SHA256:', sha);
   console.log('\nRestore with: wallet-manager restore', outPath);
+  return { outPath: path.resolve(outPath), sha };
 }
 
 // ── restore ───────────────────────────────────────────────────────────────────
