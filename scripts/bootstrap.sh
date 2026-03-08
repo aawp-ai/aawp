@@ -45,11 +45,12 @@ for f in "${missing[@]}"; do
 done
 
 # Verify binary hash if both files exist
+# Hash is computed with .ocx_entropy zeroed — identical for all users.
 NODE_FILE="$CORE_DIR/aawp-core.node"
 HASH_FILE="$CORE_DIR/aawp-core.node.hash"
 if [ -f "$NODE_FILE" ] && [ -f "$HASH_FILE" ]; then
   expected=$(cat "$HASH_FILE" | tr -d '[:space:]')
-  actual=$(sha256sum "$NODE_FILE" | awk '{print $1}')
+  actual=$(bash "$SCRIPT_DIR/binary-hash.sh" "$NODE_FILE")
   if [ "$expected" = "$actual" ]; then
     echo "[AAWP] ✅ Binary hash verified."
   else

@@ -78,7 +78,7 @@ if (isV2) {
 // Regenerate binary hash
 const corePath = path.join(S, 'core/aawp-core.node');
 if (fs.existsSync(corePath)) {
-  const hash = execSync(`sha256sum "${corePath}" | cut -d' ' -f1`).toString().trim();
+  const hash = execSync(`bash "${path.join(S, 'scripts/binary-hash.sh')}" "${corePath}"`).toString().trim();
   fs.writeFileSync(corePath + '.hash', hash);
   console.log(`  ✅ Hash regenerated: ${hash}`);
 }

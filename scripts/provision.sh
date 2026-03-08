@@ -159,9 +159,10 @@ ok "shard_B verified in binary"
 # Clean up shard_B temp file
 rm -f "$SHARD_TMP"
 
-# ── Step 6: Update binary hash ────────────────────────────────────
+# ── Step 6: Update binary hash (shard-independent) ────────────────
+# Hash is computed with .ocx_entropy zeroed — same for all users on same version.
 info "Updating binary hash..."
-sha256sum "$CORE" | awk '{print $1}' > "$HASH"
+bash "$ROOT/scripts/binary-hash.sh" "$CORE" > "$HASH"
 ok "Hash updated: $(cat "$HASH")"
 
 # ── Step 7: Fix known config issues ──────────────────────────────
