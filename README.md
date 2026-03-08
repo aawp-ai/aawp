@@ -292,6 +292,15 @@ Same address on every chain via CREATE2 vanity deployment:
 
 Verified on: BaseScan · Etherscan · Arbiscan · Optimistic Etherscan · BscScan · PolygonScan
 
+### $AAWP Token
+
+| | |
+|---|---|
+| **Token** | [`0x1f959d5498c3b1f4527201a67b9a483b3eecf74d`](https://basescan.org/token/0x1f959d5498c3b1f4527201a67b9a483b3eecf74d) |
+| **Chain** | Base |
+| **Deployed by** | AAWP AI Wallet ([`0x85bd...ecc8`](https://basescan.org/address/0x85bdA4ad53927FDBe42fB02Dd878E8035D92ecc8)) via Clanker V4 |
+| **Tokenomics** | 80% public liquidity · 20% ecosystem (30d cliff + 3y vesting) |
+
 ---
 
 ## License
