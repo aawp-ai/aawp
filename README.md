@@ -169,6 +169,56 @@ All LP fees flow back to the AAWP wallet automatically.
 
 ---
 
+### Yield / DeFi
+
+Earn yield via **Aave V3** (Base, Ethereum, Arbitrum, Optimism, Polygon) and **Venus Protocol** (BSC).
+
+```bash
+node scripts/yield.js --chain base rates                        # Browse supply/borrow APYs
+node scripts/yield.js --chain base supply USDC 100              # Supply 100 USDC
+node scripts/yield.js --chain base withdraw USDC 50             # Withdraw 50 USDC
+node scripts/yield.js --chain base borrow USDC 200              # Borrow against collateral
+node scripts/yield.js --chain base repay USDC 200               # Repay debt (max to clear)
+node scripts/yield.js --chain base positions                    # View all open positions
+```
+
+### NFT Operations
+
+Manage ERC-721 and ERC-1155 tokens across all 6 chains.
+
+```bash
+node scripts/nft.js --chain base balance                        # List all NFTs owned
+node scripts/nft.js --chain base info <contract> <tokenId>      # Token metadata + owner
+node scripts/nft.js --chain base transfer <contract> <tokenId> <to>
+node scripts/nft.js --chain base approve <contract> <tokenId> <operator>
+node scripts/nft.js --chain base mint <contract> [tokenId]      # ERC-1155 mint
+node scripts/nft.js --chain base floor <contract>               # Floor price (OpenSea/BscScan)
+```
+
+### Limit Orders
+
+Place on-chain limit orders via **CoW Protocol** (Base, Ethereum, Arbitrum, Optimism, Polygon) and **1inch Limit Order v4** (BSC).
+
+```bash
+node scripts/limit-order.js --chain base place ETH USDC 0.1 3000   # Sell 0.1 ETH at $3000
+node scripts/limit-order.js --chain base list                       # Open orders
+node scripts/limit-order.js --chain base cancel <orderUid>          # Cancel
+node scripts/limit-order.js --chain base status <orderUid>          # Check fill status
+```
+
+### Cross-chain Portfolio
+
+Parallel snapshot of all balances across all 6 chains with USD pricing.
+
+```bash
+node scripts/portfolio.js                   # Full portfolio — all chains
+node scripts/portfolio.js --chain base      # Single chain breakdown
+```
+
+Output: native + ERC-20 balances, USD value per asset, total net worth.
+
+---
+
 ### Backup & restore
 
 ```bash
