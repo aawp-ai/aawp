@@ -66,11 +66,13 @@ curl -fsSL https://aawp.ai/install.sh | sh
 # npm / npx
 npx aawp-ai
 
-# OpenClaw (full 24/7 daemon + persistent cron + push alerts)
-clawhub install aawp
+# Git (OpenClaw / full daemon + all scripts)
+git clone https://github.com/aawp-ai/aawp.git skills/aawp
 ```
 
 > **OpenClaw** is the only client with a persistent background daemon, enabling autonomous DCA strategies, price alerts, and scheduled transactions without a live session.
+>
+> ⚠️ `clawhub install aawp` is temporarily unavailable — the skill was incorrectly flagged by ClawHub's automated scanner due to the precompiled native signing binary and daemon process (core components of the protocol). Use `git clone` for the full install.
 
 ---
 
