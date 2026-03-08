@@ -296,7 +296,10 @@ async function executeSteps(steps, walletAddr, originChainKey) {
           rpc,
           data,
           gas_key: process.env.AAWP_GUARDIAN_KEY || process.env.AAWP_GAS_KEY || ensureLocalGuardian().privateKey,
-          ...(gasLimit ? { gas_limit: gasLimit } : {}),
+          // Relay gas estimates are for direct EOA calls. AAWP smart contract wallet
+          // needs extra gas for EIP-712 hashing + ECDSA verification + SSTORE (nonce).
+          // Apply 3x multiplier with a 300k minimum to prevent out-of-gas reverts.
+          ...(gasLimit ? { gas_limit: Math.max(gasLimit * 3, 300_000) } : { gas_limit: 300_000 }),
           ...(gasPriceFields.gasPrice ? { gas_price: '0x' + gasPriceFields.gasPrice.toString(16) } : {}),
           ...(gasPriceFields.maxFeePerGas ? { max_fee: '0x' + gasPriceFields.maxFeePerGas.toString(16), max_priority_fee: '0x' + gasPriceFields.maxPriorityFeePerGas.toString(16) } : {}),
         });
