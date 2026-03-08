@@ -1,6 +1,6 @@
 ---
 name: aawp
-version: 1.2.0
+version: 1.3.0
 description: >
   AAWP (AI Agent Wallet Protocol) — the only crypto wallet protocol built exclusively
   for AI Agents on EVM-compatible blockchains. Not for humans. The signer is the AI Agent
@@ -284,6 +284,68 @@ price-alert.js remove <id>
 | `scripts/restart-daemon.sh` | Force restart |
 
 Run `doctor.sh` before sensitive operations or when signing seems off.
+
+---
+
+## Token Launch (Clanker V4)
+
+Deploy a token via your AAWP wallet as the on-chain deployer, admin, and LP fee recipient.
+
+**Script:** `scripts/deploy-clanker.js`
+
+### Supported chains
+
+| Key | Chain | ChainId |
+|-----|-------|---------|
+| `base` | Base | 8453 |
+| `eth` | Ethereum | 1 |
+| `arb` | Arbitrum | 42161 |
+| `unichain` | Unichain | 130 |
+| `bera` | Berachain | 143 |
+| `bsc` | BSC | 56 |
+
+### Usage
+
+```bash
+# 1. Edit CONFIG at the top of the script
+# 2. Preview (no broadcast)
+node scripts/deploy-clanker.js --dry-run
+
+# 3. Deploy
+node scripts/deploy-clanker.js
+```
+
+### CONFIG reference
+
+```js
+const CONFIG = {
+  chain:       'base',          // base | eth | arb | unichain | bera | bsc
+  name:        'My Token',
+  symbol:      'MTK',
+  image:       'https://...',   // square image URL
+  description: '...',
+  website:     '',              // optional
+  twitter:     '',              // optional
+
+  initialMarketCap: 10,         // ETH (min ~10 ≈ $25K FDV)
+  poolPositions:    'Standard', // Standard | Project | TwentyETH
+  feeConfig:        'StaticBasic', // StaticBasic (1%) | DynamicBasic | Dynamic3
+  devBuyEth:        0.003,      // ETH to buy at launch (0 to skip)
+
+  vault: {
+    enabled:     false,         // true = lock a portion of supply
+    percentage:  20,            // % of supply (1–90)
+    lockupDays:  7,             // cliff (min 7 days)
+    vestingDays: 180,           // linear unlock after cliff
+  },
+
+  tokenAdmin:      null,        // null = AAWP wallet
+  rewardRecipient: null,        // null = AAWP wallet (receives LP fees)
+};
+```
+
+> **How it works:** the AAWP wallet calls `Clanker.deployToken()` directly (gas limit 8M).
+> `tokenAdmin` and all LP fee rewards default to the AAWP wallet — the AI Agent owns its token end-to-end.
 
 ---
 
