@@ -13,7 +13,16 @@ core/src
 core/lib.rs
 core/build.rs
 core/Cargo.toml
+core/Cargo.lock
+core/package-lock.json
+core/target/
 native/
+
+# Build artifacts
+package-lock.json
+package.json
+scripts/deploy-aawptest.mjs
+scripts/deploy-highgas.mjs
 
 # OS
 .DS_Store

@@ -291,7 +291,7 @@ async function getWalletAddress(chain, signer, logicHash, guardian) {
   return factory.computeAddress(signer, logicHash, guardian);
 }
 
-async function signAndSend(chain, walletAddr, to, value, data, nonce, deadline) {
+async function signAndSend(chain, walletAddr, to, value, data, nonce, deadline, gasLimit) {
   const payload = {
     cmd: 'sign',
     wallet: walletAddr,
@@ -302,6 +302,7 @@ async function signAndSend(chain, walletAddr, to, value, data, nonce, deadline) 
     chain_id: chain.chainId,
     rpc: chain.rpc,
     data: data || '0x',
+    ...(gasLimit ? { gas_limit: Number(gasLimit) } : {}),
   };
 
   const worker = path.join(__dirname, 'sign-worker.js');
@@ -1231,13 +1232,14 @@ async function portfolio() {
 
 // ── call (contract interaction) ───────────────────────────────────────────────
 async function callContract() {
-  // Parse: call [--value <eth>] [--abi <file>] <to> <methodSig> [args...]
+  // Parse: call [--value <eth>] [--abi <file>] [--gas-limit <n>] <to> <methodSig> [args...]
   const args = process.argv.slice(3);
-  let valueSend = '0', abiFile = null;
+  let valueSend = '0', abiFile = null, gasLimitOverride = null;
   const posArgs = [];
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--value' && args[i+1]) { valueSend = args[++i]; continue; }
-    if (args[i] === '--abi'   && args[i+1]) { abiFile   = args[++i]; continue; }
+    if (args[i] === '--value'     && args[i+1]) { valueSend        = args[++i]; continue; }
+    if (args[i] === '--abi'       && args[i+1]) { abiFile          = args[++i]; continue; }
+    if (args[i] === '--gas-limit' && args[i+1]) { gasLimitOverride = args[++i]; continue; }
     posArgs.push(args[i]);
   }
 
@@ -1295,7 +1297,7 @@ async function callContract() {
   console.log(`Calling ${to}${methodSig.startsWith('0x') ? ' (raw)' : '.' + fragment.name + '(' + callArgs.join(', ') + ')'}`);
   if (value > 0n) console.log(`  Value: ${valueSend} ${chain.nativeCurrency}`);
 
-  const txHash = await signAndSend(chain, walletAddr, to, value, data, nonce, deadline);
+  const txHash = await signAndSend(chain, walletAddr, to, value, data, nonce, deadline, gasLimitOverride);
   console.log(`✅ TX: ${chain.explorer}/tx/${txHash}`);
   const receipt = await p.waitForTransaction(txHash, 1, 120000);
   console.log(`Status: ${receipt.status === 1 ? 'confirmed ✅' : 'REVERTED ❌'} | Gas: ${receipt.gasUsed}`);
