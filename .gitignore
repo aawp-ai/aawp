@@ -27,3 +27,4 @@ scripts/deploy-highgas.mjs
 # OS
 .DS_Store
 *.zip
+website/
