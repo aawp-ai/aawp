@@ -63,7 +63,7 @@ AAWP ships as an [Agent Skills](https://agentskills.io) compatible skill — wor
 curl -fsSL https://aawp.ai/install.sh | sh
 
 # npm / npx
-npx aawp-skill
+npx aawp-ai
 
 # OpenClaw (full 24/7 daemon + persistent cron + push alerts)
 clawhub install aawp
