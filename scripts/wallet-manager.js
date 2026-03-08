@@ -24,6 +24,8 @@
  *   wallet-manager status --all
  */
 'use strict';
+// Load .env for AAWP_WALLET pin and other config
+try { const p = require('path'); require('fs').readFileSync(p.join(__dirname, '..', '.env'), 'utf8').split('\n').forEach(l => { const [k,...v] = l.split('='); if (k && !process.env[k.trim()]) process.env[k.trim()] = v.join('=').trim(); }); } catch (_) {}
 
 const net = require('net');
 const { ethers } = require('ethers');

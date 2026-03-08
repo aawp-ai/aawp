@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Compute the canonical binary hash (with .ocx_entropy zeroed out).
-# This hash is identical for all users regardless of shard_B injection.
+# Compute canonical binary hash: SHA-256 of the binary with .ocx_entropy content zeroed.
+# Pure Node.js ELF parser — no objcopy dependency, deterministic across all platforms.
 # Usage: bash scripts/binary-hash.sh [path/to/aawp-core.node]
 set -euo pipefail
 
@@ -9,16 +9,36 @@ NODE_FILE="${1:-$SCRIPT_DIR/../core/aawp-core.node}"
 
 [ -f "$NODE_FILE" ] || { echo "ERROR: $NODE_FILE not found" >&2; exit 1; }
 
-# Create temp copy, zero out .ocx_entropy, hash it
-TMP=$(mktemp)
-trap 'rm -f "$TMP"' EXIT
-cp "$NODE_FILE" "$TMP"
+node -e "
+const fs = require('fs');
+const crypto = require('crypto');
+const buf = Buffer.from(fs.readFileSync(process.argv[1]));
 
-# Zero fill the .ocx_entropy section (16 bytes of 0x00)
-if objdump -h "$TMP" 2>/dev/null | grep -q '\.ocx_entropy'; then
-  dd if=/dev/zero bs=1 count=16 of=/tmp/.zero_shard 2>/dev/null
-  objcopy --update-section .ocx_entropy=/tmp/.zero_shard "$TMP" 2>/dev/null
-  rm -f /tmp/.zero_shard
-fi
+// Parse 64-bit LE ELF to find .ocx_entropy section and zero its content bytes
+if (buf.length >= 64 && buf[0]===0x7f && buf[1]===0x45 && buf[2]===0x4c && buf[3]===0x46 && buf[4]===2) {
+  const shoff = Number(buf.readBigUInt64LE(40));
+  const shentsize = buf.readUInt16LE(58);
+  const shnum = buf.readUInt16LE(60);
+  const shstrndx = buf.readUInt16LE(62);
 
-sha256sum "$TMP" | awk '{print $1}'
+  const strSecBase = shoff + shstrndx * shentsize;
+  const strOff = Number(buf.readBigUInt64LE(strSecBase + 24));
+  const strSize = Number(buf.readBigUInt64LE(strSecBase + 32));
+
+  for (let i = 0; i < shnum; i++) {
+    const base = shoff + i * shentsize;
+    const nameIdx = buf.readUInt32LE(base);
+    let end = strOff + nameIdx;
+    while (end < strOff + strSize && buf[end] !== 0) end++;
+    const name = buf.slice(strOff + nameIdx, end).toString();
+    if (name === '.ocx_entropy') {
+      const secOff = Number(buf.readBigUInt64LE(base + 24));
+      const secSize = Number(buf.readBigUInt64LE(base + 32));
+      buf.fill(0, secOff, secOff + secSize);
+      break;
+    }
+  }
+}
+
+process.stdout.write(crypto.createHash('sha256').update(buf).digest('hex'));
+" "$NODE_FILE"

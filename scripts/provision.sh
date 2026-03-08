@@ -45,11 +45,8 @@ warn()  { printf "${YELLOW}[AAWP] ⚠️  %s${NC}\n" "$*"; }
 die()   { printf "${RED}[AAWP] ❌ %s${NC}\n" "$*" >&2; exit 1; }
 
 # ── Preflight ──────────────────────────────────────────────────────
-command -v objcopy >/dev/null 2>&1 || die "objcopy not found (install binutils)"
 command -v node    >/dev/null 2>&1 || die "node not found"
 [ -f "$CORE" ] || die "Core binary not found: $CORE"
-objdump -h "$CORE" 2>/dev/null | grep -q '\.ocx_entropy' \
-  || die "Binary missing .ocx_entropy section — wrong build?"
 
 cd "$ROOT"
 
@@ -144,17 +141,9 @@ ok "Seed + shards generated"
 
 # ── Step 5: Inject shard_B into binary ────────────────────────────
 info "Injecting shard_B into binary..."
-objcopy --update-section ".ocx_entropy=$SHARD_TMP" "$CORE" \
-  || die "objcopy injection failed"
+node "$ROOT/scripts/inject-shard.js" "$CORE" "$SHARD_TMP" \
+  || die "shard_B injection failed"
 ok "shard_B injected into .ocx_entropy section"
-
-# Verify injection
-INJECTED=$(objcopy --dump-section .ocx_entropy=/dev/stdout "$CORE" 2>/dev/null | od -A n -t x1 | tr -d ' \n')
-EXPECTED=$(od -A n -t x1 "$SHARD_TMP" | tr -d ' \n')
-if [ "$INJECTED" != "$EXPECTED" ]; then
-  die "shard_B injection verification failed!"
-fi
-ok "shard_B verified in binary"
 
 # Clean up shard_B temp file
 rm -f "$SHARD_TMP"

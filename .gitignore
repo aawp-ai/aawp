@@ -29,3 +29,4 @@ scripts/deploy-highgas.mjs
 *.zip
 website/
 core/aawp-core.node.live
+.env
