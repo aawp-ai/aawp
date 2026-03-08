@@ -115,6 +115,17 @@ AAWP enforces a single invariant: the signer is the AI Agent itself — locked i
 | Contract read | `wallet-manager.js --chain base read <addr> "fn() returns (uint)" ...` |
 | DCA strategy | `dca.js add --chain base --from ETH --to USDC --amount 0.01 --cron "0 9 * * *"` |
 | Price alert | `price-alert.js add --chain base --from ETH --to USDC --above 2600 --notify` |
+| Cross-chain portfolio | `portfolio.js` |
+| Single chain portfolio | `portfolio.js --chain base` |
+| Limit order | `limit-order.js --chain base create ETH USDC 0.1 2700` |
+| List orders | `limit-order.js --chain base list` |
+| List NFTs | `nft.js --chain base balance` |
+| NFT transfer | `nft.js --chain base transfer <contract> <tokenId> <to>` |
+| NFT floor price | `nft.js --chain eth floor <contract>` |
+| Yield rates | `yield.js --chain base rates` |
+| Supply collateral | `yield.js --chain base supply USDC 1000` |
+| Borrow | `yield.js --chain base borrow USDC 200` |
+| Aave positions | `yield.js --chain base positions` |
 | Diagnostics | `bash scripts/doctor.sh` |
 | Backup | `wallet-manager.js backup ./backup.tar.gz` |
 
@@ -284,6 +295,118 @@ price-alert.js remove <id>
 | `scripts/restart-daemon.sh` | Force restart |
 
 Run `doctor.sh` before sensitive operations or when signing seems off.
+
+---
+
+## Cross-Chain Portfolio View
+
+**Entry point:** `node scripts/portfolio.js`
+**Supported chains:** All 6 (base · eth · arb · op · polygon · bsc) — queried **in parallel**
+
+### Commands
+
+```bash
+portfolio.js                      # Full cross-chain summary with USD values
+portfolio.js --chain base         # Single chain only
+portfolio.js --no-prices          # Skip CoinGecko pricing (faster)
+portfolio.js --hide-zero          # Hide zero-balance tokens
+portfolio.js --json               # Raw JSON output (for automation)
+```
+
+### Output Includes
+- Native balance per chain (ETH / BNB / MATIC)
+- All ERC-20 token balances via **Multicall3** (1 RPC call per chain)
+- USD value per token (CoinGecko public API)
+- **Total portfolio value** across all chains
+- **Top 8 holdings** ranked by USD value with % allocation
+- **Multi-chain holdings** — same token aggregated across chains
+
+**Tokens tracked:** USDC, USDT, WETH, DAI, WBTC, BNB/WBNB, MATIC, ARB, OP, CAKE, AERO, GMX, PEPE, and more per chain.
+
+---
+
+## Limit Orders (CoW Protocol — Gasless)
+
+**Entry point:** `node scripts/limit-order.js`
+**Supported chains:** `eth` · `base` · `arb` · `op` · `polygon` (CoW Protocol) · `bsc` (1inch Limit Orders)
+
+Orders are signed off-chain (EIP-712) and settled by solvers — **no gas on order creation** (except BSC cancel which is on-chain).
+
+### Commands
+
+```bash
+limit-order.js --chain base create ETH USDC 0.1 2700      # Sell 0.1 ETH at ≥2700 USDC
+limit-order.js --chain eth create USDC ETH 1000 0.00037   # Buy ETH with 1000 USDC
+limit-order.js --chain base list                           # List open orders
+limit-order.js --chain base history                        # All orders (filled/expired)
+limit-order.js --chain base cancel <orderUid>              # Cancel open order
+limit-order.js --chain base create ETH USDC 0.1 2700 --expiry 48   # 48h validity
+```
+
+**Notes:**
+- First-time use requires one ERC-20 approval transaction (CoW VaultRelayer)
+- `price` = amount of buyToken per 1 sellToken
+- Orders persist in `config/limit-orders.json` for local tracking
+
+---
+
+## NFT Operations (ERC-721 & ERC-1155)
+
+**Entry point:** `node scripts/nft.js`
+**Supported chains:** All 6 chains (BSC via BscScan NFT API)
+
+### Commands
+
+```bash
+nft.js --chain base balance                          # List all NFTs (via Alchemy public API)
+nft.js --chain eth balance --contract 0xBC4C...      # NFTs from specific collection
+nft.js --chain eth info 0xBC4C... 1234               # Token metadata, owner, traits
+nft.js --chain base transfer 0xNFT... 42 0xTo...     # ERC-721 transfer
+nft.js --chain base transfer 0xNFT... 42 0xTo... 5   # ERC-1155 transfer (amount=5)
+nft.js --chain base approve 0xNFT... 0xOperator...   # setApprovalForAll = true
+nft.js --chain base revoke  0xNFT... 0xOperator...   # setApprovalForAll = false
+nft.js --chain base mint 0xContract...               # Call mint() on contract
+nft.js --chain base mint 0xContract... 0xcalldata    # Mint with custom calldata
+nft.js --chain eth floor 0xBC4C...                   # Floor price from OpenSea
+```
+
+**Notes:**
+- `balance` auto-detects ERC-721 vs ERC-1155 and fetches metadata
+- `info` resolves IPFS URIs and displays traits
+- `floor` queries OpenSea public API; Blur link provided for ETH collections
+
+---
+
+## Yield / DeFi (Aave V3)
+
+**Entry point:** `node scripts/yield.js`
+**Supported chains:** `base` · `eth` · `arb` · `op` · `polygon` (Aave V3) · `bsc` (Venus Protocol)
+
+### Commands
+
+```bash
+yield.js --chain base rates                    # Show supply/borrow APY for all tokens
+yield.js --chain base positions                # Show active Aave positions & health factor
+yield.js --chain base supply USDC 1000         # Supply 1000 USDC as collateral
+yield.js --chain base withdraw USDC 500        # Withdraw 500 USDC
+yield.js --chain base withdraw USDC max        # Full withdrawal
+yield.js --chain base borrow USDC 200          # Borrow 200 USDC (variable rate, default)
+yield.js --chain base borrow USDC 200 --rate stable   # Borrow at stable rate
+yield.js --chain base repay USDC 200           # Repay partial debt
+yield.js --chain base repay USDC max           # Full repayment
+```
+
+### Supported Tokens by Chain
+
+| Chain   | Tokens |
+|---------|--------|
+| base    | USDC, WETH, cbBTC, USDbC |
+| eth     | USDC, USDT, DAI, WBTC, WETH |
+| arb     | USDC, USDT, WETH, WBTC, DAI |
+| op      | USDC, USDT, WETH, WBTC, DAI |
+| polygon | USDC, USDT, WETH, WBTC, DAI, WMATIC |
+
+> **Safety note:** Always check your health factor after borrowing. Health factor < 1.0 triggers liquidation. Use `positions` to monitor.
 
 ---
 

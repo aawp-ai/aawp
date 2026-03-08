@@ -1,0 +1,10 @@
+{
+  "name": "aawp-skill",
+  "version": "1.4.0",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "clanker-sdk": "latest",
+    "viem": "^2.0.0"
+  }
+}
