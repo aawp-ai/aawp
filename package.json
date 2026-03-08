@@ -1,9 +1,23 @@
 {
   "name": "aawp-skill",
-  "version": "1.4.1",
-  "type": "commonjs",
-  "dependencies": {
-    "clanker-sdk": "latest",
-    "viem": "^2.0.0"
-  }
+  "version": "1.5.0",
+  "description": "AAWP — AI Agent Wallet Protocol skill installer",
+  "bin": {
+    "aawp-skill": "bin/install.js"
+  },
+  "scripts": {
+    "postinstall": "node bin/install.js"
+  },
+  "files": [
+    "bin/install.js",
+    "README.md"
+  ],
+  "keywords": ["aawp", "ai-agent", "wallet", "web3", "skill"],
+  "author": "aawp-ai",
+  "license": "BUSL-1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aawp-ai/aawp.git"
+  },
+  "homepage": "https://aawp.ai"
 }
