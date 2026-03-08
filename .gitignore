@@ -28,3 +28,4 @@ scripts/deploy-highgas.mjs
 .DS_Store
 *.zip
 website/
+core/aawp-core.node.live
