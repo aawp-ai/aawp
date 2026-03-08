@@ -1,0 +1,24 @@
+# Build artifacts
+core/target/
+core/node_modules/
+core/package-lock.json
+core/Cargo.lock
+
+# Sensitive runtime files
+.agent-config/
+config/guardian.json
+config/address-book.json
+config/limit-orders.json
+config/dca-jobs.json
+config/price-alerts.json
+
+# Dev/lock files
+package-lock.json
+*.lock
+
+# OS
+.DS_Store
+*.zip
+
+# Website (maintained separately)
+website/

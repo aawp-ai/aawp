@@ -1,7 +1,6 @@
 {
   "name": "aawp-skill",
-  "version": "1.4.0",
-  "private": true,
+  "version": "1.4.1",
   "type": "commonjs",
   "dependencies": {
     "clanker-sdk": "latest",
