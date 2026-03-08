@@ -17,6 +17,7 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/npm/v/aawp-ai?style=flat-square&label=npm&color=CB3837" alt="npm">
   <img src="https://img.shields.io/badge/Live-6_EVM_Chains-0052FF?style=flat-square" alt="Live on 6 chains">
   <img src="https://img.shields.io/badge/Agent_Skills-Compatible-22c55e?style=flat-square" alt="Agent Skills">
   <img src="https://img.shields.io/badge/Runtime-Rust_N--API-dea584?style=flat-square&logo=rust" alt="Rust">
@@ -142,6 +143,31 @@ node scripts/price-alert.js add --chain base --from ETH --to USDC --above 2600 -
 # Auto-swap on trigger
 node scripts/price-alert.js add --chain base --from ETH --to USDC --below 2200 --auto-swap 0.01
 ```
+
+### Token launch (Clanker V4)
+
+Deploy a token where your AAWP wallet is the on-chain deployer, token admin, and LP fee recipient — across 6 chains.
+
+```bash
+# 1. Edit CONFIG at the top of the script (name, symbol, image, chain, vault…)
+# 2. Preview without broadcasting
+node scripts/deploy-clanker.js --dry-run
+
+# 3. Deploy
+node scripts/deploy-clanker.js
+```
+
+**Supported chains:** Base · Ethereum · Arbitrum · Unichain · Berachain · BSC
+
+**Key options:**
+- `initialMarketCap` — starting FDV in ETH (min ~10 ETH ≈ $25K)
+- `devBuyEth` — ETH to spend buying at launch
+- `vault.enabled` — lock % of supply with cliff + linear vesting
+- `feeConfig` — `StaticBasic` (1%) | `DynamicBasic` | `Dynamic3`
+
+All LP fees flow back to the AAWP wallet automatically.
+
+---
 
 ### Backup & restore
 
