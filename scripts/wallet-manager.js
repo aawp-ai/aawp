@@ -691,12 +691,25 @@ async function createWallet() {
   const commitBlock = commitReceipt.blockNumber;
 
   const delay = Number(await factory.REVEAL_DELAY());
-  process.stdout.write(`  Waiting ${delay} blocks`);
-  while (true) {
-    const current = await p.getBlockNumber();
-    if (current >= commitBlock + delay) break;
-    process.stdout.write('.');
-    await new Promise(r => setTimeout(r, 2000));
+
+  // NOTE: On Arbitrum, Solidity block.number = L1 block (~13s each), but
+  // provider.getBlockNumber() = L2 block (~0.25s). Waiting by L2 count causes
+  // commitStatus.revealable=false. Use wall-clock wait based on L1 time instead.
+  const isArbitrum = chain.chainId === 42161;
+  if (isArbitrum) {
+    const waitMs = delay * 13000 + 5000; // L1 block ~12-13s each + 5s buffer
+    process.stdout.write(`  Waiting ${delay} L1 blocks (~${Math.round(waitMs/1000)}s on Arbitrum)`);
+    await new Promise(r => setTimeout(r, waitMs));
+    process.stdout.write('\n');
+  } else {
+    process.stdout.write(`  Waiting ${delay} blocks`);
+    while (true) {
+      const current = await p.getBlockNumber();
+      if (current >= commitBlock + delay) break;
+      process.stdout.write('.');
+      await new Promise(r => setTimeout(r, 2000));
+    }
+    process.stdout.write('\n');
   }
   process.stdout.write('\n');
 

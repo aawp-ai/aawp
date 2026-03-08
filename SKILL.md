@@ -1,6 +1,6 @@
 ---
 name: aawp
-version: 1.3.0
+version: 1.3.1
 description: >
   AAWP (AI Agent Wallet Protocol) — the only crypto wallet protocol built exclusively
   for AI Agents on EVM-compatible blockchains. Not for humans. The signer is the AI Agent
@@ -33,20 +33,19 @@ credentials:
   - name: "Guardian Key"
     description: "ECDSA private key for the gas-relay wallet. Auto-generated on first provision and stored in config/guardian.json. Used ONLY to pay gas fees — never holds user assets."
   - name: "Encrypted Seed"
-    description: "Agent signing seed, AES-256-GCM encrypted at rest. Generated during provisioning, stored in .agent-config/seed.enc. This is the agent's on-chain signing authority."
+    description: "Agent signing seed, encrypted at rest. Generated during provisioning, stored in the .agent-config directory. This is the agent's on-chain signing authority."
 persistence:
   - type: daemon
-    description: "Local signing daemon (background process) listens on a Unix socket at /tmp/.aawp-daemon.*. Holds the decrypted signing key in memory. Managed via ensure-daemon.sh / restart-daemon.sh."
+    description: "Local signing daemon (background process) listens on a Unix socket at /tmp/.aawp-daemon.*. Holds the signing key in memory during operation. Managed via ensure-daemon.sh / restart-daemon.sh."
   - type: files
-    description: "Writes: config/guardian.json, .agent-config/seed.enc, /tmp/.aawp-daemon.lock (PID lock)."
+    description: "Writes to config/ and .agent-config/ directories, plus a daemon PID lock under /tmp/."
   - type: cron
     description: "DCA strategies and price alerts register OpenClaw cron jobs for autonomous scheduled execution."
 native_binary:
   file: core/aawp-core.node
   hash_file: core/aawp-core.node.hash
   description: >
-    Precompiled Node.js N-API addon (linux-x64) for cryptographic operations:
-    seed derivation, ECDSA signing, AES-256-GCM enc/dec, HMAC auth.
+    Precompiled Node.js N-API addon (linux-x64) for cryptographic operations.
     Built from Rust via napi-rs. Hash recorded in aawp-core.node.hash.
   source: "https://github.com/aawp-ai/aawp"
   verification: "On-chain factory approveBinary(hash) — only whitelisted builds can operate wallets"

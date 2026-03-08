@@ -226,7 +226,7 @@ node scripts/wallet-manager.js backup  ./aawp-backup.tar.gz
 node scripts/wallet-manager.js restore ./aawp-backup.tar.gz
 ```
 
-> The backup includes 6 critical files: `seed.enc`, `aawp-core.node`, two hardware anchors, `fonts.idx` shard, and `guardian.json`. Keep it offline.
+> The backup includes 6 critical files: `seed.enc`, `aawp-core.node`, hardware-binding anchors, and the Guardian key. All 6 are required to restore access. Keep it offline and encrypted.
 
 ---
 
