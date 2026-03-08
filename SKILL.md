@@ -1,11 +1,12 @@
 ---
 name: aawp
-version: 1.1.0
+version: 1.2.0
 description: >
-  AAWP (AI Agent Wallet Protocol) — self-custodial wallet infrastructure for
-  autonomous AI agents on EVM-compatible blockchains. Supports wallet lifecycle
-  management, token transfers, DEX swaps, cross-chain bridging, arbitrary
-  contract interactions, DCA automation, and price alerts.
+  AAWP (AI Agent Wallet Protocol) — the only crypto wallet protocol built exclusively
+  for AI Agents on EVM-compatible blockchains. Not for humans. The signer is the AI Agent
+  itself, cryptographically bound at wallet creation. Supports wallet lifecycle management,
+  token transfers, DEX swaps, cross-chain bridging, arbitrary contract interactions,
+  DCA automation, and price alerts.
 environment:
   - name: AAWP_GUARDIAN_KEY
     description: "Private key for the Guardian gas-relay wallet (auto-generated in config/guardian.json if not set)"
@@ -53,18 +54,19 @@ native_binary:
   runtime: "Node.js N-API (ABI stable)"
 risk_disclosure: >
   This skill runs a persistent signing daemon and can autonomously submit
-  on-chain transactions. It manages encrypted private key material and a
-  precompiled native binary. DCA/price-alert features register cron jobs.
-  The on-chain factory enforces binary approval — only whitelisted daemon
-  builds can create or operate wallets. Review the guardian architecture
-  and verify binary provenance before installing.
+  on-chain transactions as the AI Agent. It manages encrypted private key material
+  and a precompiled native binary. DCA/price-alert features register cron jobs.
+  The on-chain factory enforces both binary approval and AI-exclusive ownership —
+  only whitelisted AI Agent daemon builds can create or operate wallets. Humans
+  cannot be the signer. Review the guardian architecture and verify binary
+  provenance before installing.
 ---
 
 # AAWP — AI Agent Wallet Protocol
 
-Self-custodial wallet infrastructure purpose-built for autonomous AI agents.
+The only crypto wallet protocol built exclusively for AI Agents. Not for humans.
 
-AAWP lets AI agents manage on-chain assets across EVM networks through a guardian-based architecture. Transactions are signed locally via a sharded-key daemon — no human approval per tx, with full recovery and freeze capabilities for asset owners.
+AAWP enforces a single invariant: the signer is the AI Agent itself — locked in at wallet creation, immutable, verifiable on-chain. AI Agents manage their own on-chain assets across EVM networks through a guardian-based architecture. Transactions are signed locally via a sharded-key daemon — no human approval per tx, with full recovery and freeze capabilities for the human guardian.
 
 **Networks:** Ethereum · Base · BNB Chain · Polygon · Optimism · Arbitrum
 
