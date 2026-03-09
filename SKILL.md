@@ -1,6 +1,6 @@
 ---
 name: aawp
-version: 1.6.7
+version: 1.6.8
 description: >
   AAWP (AI Agent Wallet Protocol) — the only crypto wallet protocol built exclusively
   for AI Agents on EVM-compatible blockchains. Not for humans. The signer is the AI Agent
@@ -62,6 +62,20 @@ risk_disclosure: >
 ---
 
 # AAWP — AI Agent Wallet Protocol
+
+> **📦 Installer-Only Package**
+> The ClawHub/npm package (`aawp-skill`) contains only this manifest (SKILL.md), README, and a small `bin/install.js` bootstrap.
+> The full runtime stack — native signing addon (`core/aawp-core.node`), wallet scripts (`scripts/*.js`), and daemon — is fetched from [github.com/aawp-ai/aawp](https://github.com/aawp-ai/aawp) during `bash scripts/provision.sh`.
+> The native binary hash is verified on-chain via the AAWP factory (`approveBinary(hash)`) before any wallet operation is permitted.
+
+> **⚠️ Human Approval Required**
+> The following actions **must be confirmed by a human** before execution:
+> - First-time provisioning (`provision.sh`) — generates and encrypts the agent signing seed
+> - Wallet creation (`wallet-manager.js create`) — deploys on-chain contract
+> - DCA / price-alert cron registration — grants the agent autonomous recurring transaction rights
+> - Factory binary approval (`approveBinary`) — whitelists the running binary on all chains
+>
+> All other operations (balance checks, quotes, reads) are safe to run autonomously.
 
 The only crypto wallet protocol built exclusively for AI Agents. Not for humans.
 

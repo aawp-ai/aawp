@@ -11,6 +11,15 @@ const SKILL_NAME = 'aawp';
 const RAW_BASE   = 'https://raw.githubusercontent.com/aawp-ai/aawp/main/skills/aawp';
 const FALLBACK   = 'https://aawp.ai/skill';
 
+// ── Content validation ────────────────────────────────────────────────────────
+function validateSkillMd(content, sourceUrl) {
+  // Must be a valid SKILL.md with expected markers
+  if (!content.startsWith('---')) throw new Error('Downloaded content is not a valid SKILL.md (missing YAML frontmatter)');
+  if (!content.includes('name: aawp')) throw new Error('Downloaded SKILL.md does not match expected skill identity');
+  if (!content.includes('aawp.ai')) throw new Error('Downloaded SKILL.md failed content integrity check');
+  return true;
+}
+
 // ── ANSI colors ───────────────────────────────────────────────────────────────
 const isTTY  = process.stdout.isTTY;
 const c = (code, s) => isTTY ? `\x1b[${code}m${s}\x1b[0m` : s;
@@ -49,11 +58,19 @@ async function fetchText(url) {
 }
 
 async function downloadSkillMd() {
+  const primaryUrl = `${RAW_BASE}/SKILL.md`;
+  const fallbackUrl = `${FALLBACK}/SKILL.md`;
+  let content, sourceUrl;
   try {
-    return await fetchText(`${RAW_BASE}/SKILL.md`);
+    content = await fetchText(primaryUrl);
+    sourceUrl = primaryUrl;
   } catch {
-    return fetchText(`${FALLBACK}/SKILL.md`);
+    content = await fetchText(fallbackUrl);
+    sourceUrl = fallbackUrl;
   }
+  info(`Source: ${dim(sourceUrl)}`);
+  validateSkillMd(content, sourceUrl);
+  return content;
 }
 
 // ── Client detection ──────────────────────────────────────────────────────────
@@ -118,6 +135,8 @@ async function main() {
   console.log('');
   console.log(`  ${bold('AAWP Skill Installer')} ${dim('v' + VERSION)}`);
   console.log(`  ${dim('AI Agent Wallet Protocol — aawp.ai')}`);
+  console.log(`  ${dim('This package installs the SKILL.md manifest only.')}`);
+  console.log(`  ${dim('Runtime binary + scripts are fetched from GitHub during provisioning.')}`);
   console.log('');
 
   const detected = CLIENTS.filter(c => c.detect());
