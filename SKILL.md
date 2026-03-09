@@ -1,6 +1,6 @@
 ---
 name: aawp
-version: 1.6.5
+version: 1.6.6
 description: >
   AAWP (AI Agent Wallet Protocol) — the only crypto wallet protocol built exclusively
   for AI Agents on EVM-compatible blockchains. Not for humans. The signer is the AI Agent

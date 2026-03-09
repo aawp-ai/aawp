@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 const net = require('net');
-const addon = require(process.env.AAWP_CORE || '/root/clawd/skills/aawp/core/aawp-core.node');
-const C = process.env.AAWP_CONFIG || '/root/clawd/skills/aawp/.agent-config';
+const addon = require(process.env.AAWP_CORE || require('path').join(__dirname, '..', 'core', 'aawp-core.node'));
+const S = process.env.AAWP_SKILL  || require('path').resolve(__dirname, '..');
+const C = process.env.AAWP_CONFIG || require('path').join(S, '.agent-config');
 
 function sendTx(params) {
   return new Promise((resolve, reject) => {

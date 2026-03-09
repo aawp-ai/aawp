@@ -236,7 +236,7 @@ async function executeSteps(steps, walletAddr, originChainKey) {
   const p     = new ethers.JsonRpcProvider(rpc);
 
   const WALLET_ABI = (() => {
-    try { return require('/root/aawp-contracts/out/AAWPWallet.sol/AAWPWallet.json').abi; }
+    try { throw 0; /* ABI inline below */ }
     catch { return ['function nonce() view returns (uint256)']; }
   })();
 
