@@ -61,9 +61,6 @@ AAWP ships as an [Agent Skills](https://agentskills.io) compatible skill — wor
 
 ```bash
 # Universal — auto-detects your AI client
-curl -fsSL https://aawp.ai/install.sh | sh
-
-# npm / npx
 npx aawp-ai
 
 # Git (OpenClaw / full daemon + all scripts)
