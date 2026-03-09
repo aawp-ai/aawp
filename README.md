@@ -64,7 +64,7 @@ AAWP ships as an [Agent Skills](https://agentskills.io) compatible skill — wor
 npx aawp-ai
 
 # Git (OpenClaw / full daemon + all scripts)
-git clone https://github.com/aawp-ai/aawp.git skills/aawp
+git clone https://github.com/aawp-ai/aawp.git ~/.agents/skills/aawp
 ```
 
 > **OpenClaw** is the only client with a persistent background daemon, enabling autonomous DCA strategies, price alerts, and scheduled transactions without a live session.
