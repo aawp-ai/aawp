@@ -269,12 +269,12 @@ function ensureLocalGuardian() {
 }
 
 async function getAddresses() {
-  const [a, l] = await Promise.all([
-    socketQuery('address'),
-    socketQuery('logichash'),
-  ]);
+  const a = await socketQuery('address');
+  // binaryHash = sha256 of the clean build (from .hash file) — same for all users, all platforms
+  const hashFile = require('path').join(S, 'core', 'aawp-core.node.hash');
+  const logicHash = '0x' + fs.readFileSync(hashFile, 'utf8').trim();
   const guardianRec = ensureLocalGuardian();
-  return { signer: a.address, guardian: guardianRec.address, logicHash: l.logicHash };
+  return { signer: a.address, guardian: guardianRec.address, logicHash };
 }
 
 function resolveToken(chain, tokenArg) {
@@ -653,7 +653,7 @@ async function createWallet() {
   console.log(`  Guardian (gas relay): ${guardian}`);
   console.log(`  Requesting blind commit + reveal proof from daemon...`);
 
-  const binaryHash = logicHash;
+  const binaryHash = logicHash; // already read from .hash file in getAddresses()
   const innerHash = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
     ['address', 'bytes32', 'address', 'bytes32'],
     [signer, binaryHash, guardian, nonce]
