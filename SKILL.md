@@ -1,12 +1,12 @@
 ---
 name: aawp
-version: 1.6.8
+version: 2.0.0
 description: >
   AAWP (AI Agent Wallet Protocol) — the only crypto wallet protocol built exclusively
-  for AI Agents on EVM-compatible blockchains. Not for humans. The signer is the AI Agent
-  itself, cryptographically bound at wallet creation. Supports wallet lifecycle management,
-  token transfers, DEX swaps, cross-chain bridging, arbitrary contract interactions,
-  DCA automation, and price alerts.
+  for AI Agents on EVM-compatible blockchains and Solana. Not for humans. The signer is
+  the AI Agent itself, cryptographically bound at wallet creation. Supports wallet lifecycle
+  management, token transfers, DEX swaps, cross-chain bridging, Solana native trading
+  (Pump.fun SDK + Jupiter), token launches, DCA automation, and price alerts.
 environment:
   - name: AAWP_GUARDIAN_KEY
     description: "Private key for the Guardian gas-relay wallet (auto-generated in config/guardian.json if not set)"
@@ -109,7 +109,10 @@ AAWP enforces a single invariant: the signer is the AI Agent itself — locked i
 └─────────────────────────────────────────────────┘
 ```
 
-**Key separation:** Guardian pays gas → Wallet holds assets → Daemon signs transactions.
+**EVM:** Guardian pays gas → Wallet holds assets → Daemon signs (secp256k1).
+**Solana:** AI Signer pays directly → Wallet PDA holds assets → Daemon signs (Ed25519).
+
+Same seed, HKDF domain separation → cryptographically independent keys per chain family.
 
 ---
 
@@ -141,6 +144,16 @@ AAWP enforces a single invariant: the signer is the AI Agent itself — locked i
 | Aave positions | `yield.js --chain base positions` |
 | Diagnostics | `bash scripts/doctor.sh` |
 | Backup | `wallet-manager.js backup ./backup.tar.gz` |
+| **Solana** | |
+| Solana status | `wallet-manager.js --chain solana status` |
+| Solana balance | `wallet-manager.js --chain solana balance` |
+| Solana swap (Pump) | `wallet-manager.js --chain solana swap SOL <mint> 0.1` |
+| Solana swap (Jupiter) | `wallet-manager.js --chain solana swap SOL USDC 0.5 --pool jupiter` |
+| Pump token info | `wallet-manager.js --chain solana pump-info <mint>` |
+| Pump launch token | `wallet-manager.js --chain solana pump-create <name> <symbol> <uri> --buy 0.5` |
+| Pump creator fees | `wallet-manager.js --chain solana pump-fees balance` |
+| Pump incentives | `wallet-manager.js --chain solana pump-incentives` |
+| Pump AMM liquidity | `wallet-manager.js --chain solana pump-lp deposit <mint> <amt>` |
 
 All commands: `node scripts/wallet-manager.js --help`
 
@@ -524,6 +537,116 @@ Verified on: Etherscan · BaseScan · BscScan · PolygonScan · Optimistic Ether
 
 ---
 
+## Solana Integration
+
+AAWP natively supports Solana via a dedicated Anchor program. Same seed, HKDF domain separation (`aawp_solana_signer_v1_{hw_hex}`) → Ed25519 keypair independent from EVM secp256k1.
+
+### Key Addresses
+
+| Component | Address |
+|-----------|---------|
+| Program ID | `AAwpAAQSVAZYHvpUW5uz7zxqj7RYTYR6CZvWL9wf4qiS` |
+| Network | Mainnet + Devnet (same ID) |
+| AI Signer | `BrZhu5oBmqBPGMYA8TiUS2hMr2Kpg11q5PFpfK35Kgoi` |
+| Wallet PDA | `CKeDtwBFaahwX3LuEo4us1XJd7hS2e45N25zDHjTUb4f` |
+| Guardian | `BvbXW3uZG9YkzQmcYEnQ5qxTkTf1tQ5Jb4vHJ8HPM77P` |
+
+### Architecture Differences from EVM
+
+| | EVM | Solana |
+|---|---|---|
+| Signing | secp256k1 (ECDSA) | Ed25519 (EdDSA) |
+| Wallet | CREATE2 deterministic | PDA (Program Derived Address) |
+| Gas | Guardian relays | AI Signer pays directly |
+| Identity | Soulbound ERC-5192 | Soulbound PDA |
+| Token Standard | ERC-20 | SPL Token / Token-2022 |
+
+### Solana CLI Commands
+
+All commands use `--chain solana` flag:
+
+```bash
+# ── Core ──
+wallet-manager --chain solana status
+wallet-manager --chain solana balance
+wallet-manager --chain solana compute-address
+wallet-manager --chain solana send <to> <amount_SOL>
+wallet-manager --chain solana price <token_or_mint>
+
+# ── Swap (auto-routes: Pump bonding curve → Pump AMM → Jupiter) ──
+wallet-manager --chain solana swap SOL <mint> 0.1              # buy with SOL
+wallet-manager --chain solana swap <mint> SOL 1000000           # sell tokens
+wallet-manager --chain solana swap SOL <mint> 0.1 --pool jupiter  # force Jupiter
+wallet-manager --chain solana swap SOL USDC 0.5 --slippage 5
+
+# ── Pump.fun: Token Info ──
+wallet-manager --chain solana pump-info <mint>
+wallet-manager --chain solana pump-quote buy <mint> <lamports>
+wallet-manager --chain solana pump-quote sell <mint> <token_amount>
+wallet-manager --chain solana pump-quote cost <mint> <token_amount>  # SOL cost for N tokens
+
+# ── Pump.fun: Token Launch ──
+wallet-manager --chain solana pump-create <name> <symbol> <metadata_uri>
+wallet-manager --chain solana pump-create <name> <symbol> <uri> --buy 0.5  # create + first buy
+
+# ── Pump.fun: Creator Fees ──
+wallet-manager --chain solana pump-fees balance [creator_addr]
+wallet-manager --chain solana pump-fees collect [creator_addr]
+wallet-manager --chain solana pump-fees distribute <mint>
+wallet-manager --chain solana pump-fees cashback
+
+# ── Pump.fun: Fee Sharing ──
+wallet-manager --chain solana pump-share <mint> <addr1:share1> <addr2:share2>
+
+# ── Pump.fun: Token Incentives ──
+wallet-manager --chain solana pump-incentives              # check unclaimed
+wallet-manager --chain solana pump-incentives claim
+
+# ── Pump.fun: AMM Liquidity ──
+wallet-manager --chain solana pump-lp deposit <mint> <token_amount>
+wallet-manager --chain solana pump-lp withdraw <mint> <lp_amount>
+
+# ── Pump.fun: Volume ──
+wallet-manager --chain solana pump-volume                  # stats
+wallet-manager --chain solana pump-volume sync
+
+# ── Pump.fun: Migrate ──
+wallet-manager --chain solana pump-migrate <mint> <withdraw_authority>
+```
+
+### Swap Routing
+
+The swap command uses a 3-tier routing strategy:
+
+1. **Pump.fun Bonding Curve** (default) — direct on-chain via `@pump-fun/pump-sdk`, lowest latency for active Pump tokens
+2. **Pump.fun AMM** — for graduated tokens that completed the bonding curve, uses `@pump-fun/pump-swap-sdk`
+3. **Jupiter Metis** — fallback aggregator for non-Pump tokens or when Pump routes fail
+
+Token-2022 is auto-detected. The SDK handles ATA creation, WSOL wrapping, and fee calculation.
+
+### Daemon Commands
+
+Solana signing uses the same AAWP daemon as EVM:
+
+- `sol_address` — returns Ed25519 public key (no AI Gate needed)
+- `sol_sign` — signs arbitrary message (requires AI Gate token)
+
+AI Gate token is read from: `addon._a0()` → `/tmp/.aawp-ai-token` → `AAWP_AI_TOKEN` env.
+
+### Source Locations
+
+| Path | Contents |
+|------|----------|
+| `/root/aawp-solana/` | Anchor program source (factory, wallet, identity) |
+| `/root/aawp-solana/target/deploy/aawp_solana.so` | Compiled program (318KB) |
+| `/root/clawd/skills/aawp/lib/solana.js` | Core Solana module (address, sign, balance, PDA) |
+| `/root/clawd/skills/aawp/lib/solana-swap.js` | Swap router (Pump → Jupiter) |
+| `/root/clawd/skills/aawp/lib/pump.js` | Full Pump.fun SDK integration |
+| `/root/aawp-solana/scripts/create-mainnet-wallet.mjs` | Mainnet wallet creation script |
+| `/root/aawp-solana/tests/test_raw.mjs` | Raw instruction tests (7 tests) |
+
+---
+
 ## File Structure
 
 ```
@@ -541,6 +664,10 @@ aawp/
 │   ├── doctor.sh               # Diagnostics
 │   ├── ensure-daemon.sh        # Daemon lifecycle
 │   └── restart-daemon.sh       # Force restart
+├── lib/
+│   ├── solana.js               # Core Solana module (address, sign, balance, PDA)
+│   ├── solana-swap.js          # Swap router (Pump SDK → Jupiter fallback)
+│   └── pump.js                 # Full Pump.fun SDK integration
 ├── core/
 │   ├── aawp-core.node          # Native signing addon (linux-x64)
 │   ├── aawp-core.node.hash     # Binary integrity hash

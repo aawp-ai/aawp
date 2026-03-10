@@ -1416,10 +1416,368 @@ function addrCmd() {
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ── Solana Handler ─────────────────────────────────────────────────────────
+async function solanaMain(cmd, args) {
+  const sol = require(path.join(__dirname, '..', 'lib', 'solana'));
+  const solRpc = rpcFlag || process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
+
+  switch (cmd) {
+    case 'status': {
+      const addr = await sol.getAddress();
+      const walletAddr = await sol.getWalletAddress();
+      console.log('═══ AAWP Solana Wallet ═══');
+      console.log('  Network:    ', solRpc.includes('devnet') ? 'Devnet' : 'Mainnet');
+      console.log('  AI Signer:  ', addr);
+      console.log('  Wallet PDA: ', walletAddr);
+      try {
+        const state = await sol.getWalletState(solRpc);
+        if (state) {
+          console.log('  Guardian:   ', state.guardian);
+          console.log('  Nonce:      ', state.nonceCounter);
+          console.log('  Balance:    ', state.balance.toFixed(6), 'SOL');
+          console.log('  Created:     slot', state.createdSlot);
+        } else {
+          console.log('  Status:      Not deployed yet');
+          const signerBal = await sol.getBalance(addr, solRpc);
+          console.log('  Signer SOL: ', signerBal.toFixed(6));
+        }
+      } catch (e) {
+        console.log('  ⚠️ RPC error:', e.message.slice(0, 80));
+      }
+      break;
+    }
+    case 'balance': {
+      const addr = await sol.getAddress();
+      const walletAddr = await sol.getWalletAddress();
+      const signerBal = await sol.getBalance(addr, solRpc);
+      const walletBal = await sol.getBalance(walletAddr, solRpc).catch(() => 0);
+      console.log(`AI Signer (${addr}): ${signerBal.toFixed(6)} SOL`);
+      console.log(`Wallet PDA (${walletAddr}): ${walletBal.toFixed(6)} SOL`);
+      break;
+    }
+    case 'compute-address': {
+      const addr = await sol.getAddress();
+      const walletAddr = await sol.getWalletAddress();
+      console.log('AI Signer:', addr);
+      console.log('Wallet PDA:', walletAddr);
+      break;
+    }
+    case 'send': {
+      const [to, amtStr] = [process.argv[3], process.argv[4]];
+      if (!to || !amtStr) { console.error('Usage: --chain solana send <to> <amount_SOL>'); process.exit(1); }
+      const lamports = Math.round(parseFloat(amtStr) * 1e9);
+      console.log(`Sending ${amtStr} SOL to ${to}...`);
+      // For now, inform that full send requires OpenClaw daemon with AI Gate
+      console.log('⚠️ SOL transfers from wallet PDA require OpenClaw-managed daemon (AI Gate).');
+      console.log('Use the Solana test suite for direct testing: cd /root/aawp-solana && node tests/test_raw.mjs');
+      break;
+    }
+    case 'swap': {
+      const swapMod = require(path.join(__dirname, '..', 'lib', 'solana-swap'));
+      // Usage: --chain solana swap <from> <to> <amount> [--pool pump|raydium|auto|jupiter] [--slippage N]
+      const fromTk = args[0], toTk = args[1], amtStr = args[2];
+      if (!fromTk || !toTk || !amtStr) {
+        console.error('Usage: --chain solana swap <from> <to> <amount> [--pool pump] [--slippage 15]');
+        console.error('  e.g. --chain solana swap SOL <token_mint> 0.1');
+        console.error('  e.g. --chain solana swap <token_mint> SOL 1000000 --pool auto');
+        process.exit(1);
+      }
+      // Parse optional flags from remaining args
+      let pool = 'pump', slippage = 15;
+      for (let i = 3; i < args.length; i++) {
+        if (args[i] === '--pool' && args[i+1]) { pool = args[++i]; }
+        if (args[i] === '--slippage' && args[i+1]) { slippage = parseFloat(args[++i]); }
+      }
+      const amount = parseFloat(amtStr);
+      if (isNaN(amount) || amount <= 0) { console.error('Invalid amount'); process.exit(1); }
+
+      // Price check before swap
+      const mint = swapMod.resolveToken(fromTk) === swapMod.SOL_MINT ? swapMod.resolveToken(toTk) : swapMod.resolveToken(fromTk);
+      if (mint) {
+        try {
+          const price = await swapMod.getPrice(mint);
+          if (price && price.price) console.log(`Current price: $${price.price}`);
+        } catch (_) {}
+      }
+
+      console.log(`Swap: ${amount} ${fromTk} → ${toTk} (pool: ${pool}, slippage: ${slippage}%)`);
+
+      try {
+        const result = await swapMod.swap({
+          from: fromTk,
+          to: toTk,
+          amount,
+          slippage,
+          pool,
+          getAddress: () => sol.getAddress(),
+          signTx: (msgBytes) => sol.sign(msgBytes),
+          rpcUrl: solRpc,
+        });
+        console.log(`✅ Swap complete!`);
+        console.log(`  Route: ${result.route}`);
+        console.log(`  TX: https://solscan.io/tx/${result.signature}`);
+        if (result.outAmount) console.log(`  Output: ${result.outAmount}`);
+      } catch (e) {
+        console.error(`❌ Swap failed: ${e.message}`);
+        process.exit(1);
+      }
+      break;
+    }
+    case 'price': {
+      const swapMod = require(path.join(__dirname, '..', 'lib', 'solana-swap'));
+      const tokenArg = args[0];
+      if (!tokenArg) { console.error('Usage: --chain solana price <token_mint_or_symbol>'); process.exit(1); }
+      let mint = swapMod.resolveToken(tokenArg);
+      if (!mint) {
+        const info = await swapMod.searchToken(tokenArg);
+        if (info) { mint = info.id || info.address; console.log(`Resolved: ${info.symbol} (${mint})`); }
+        else { console.error('Token not found'); process.exit(1); }
+      }
+      const price = await swapMod.getPrice(mint);
+      if (price && price.price) {
+        console.log(`${tokenArg}: $${price.price}`);
+      } else {
+        console.log('Price not available');
+      }
+      break;
+    }
+    // ── Pump.fun: Token Info ──
+    case 'pump-info': {
+      const pump = require(path.join(__dirname, '..', 'lib', 'pump'));
+      const { Connection } = require('@solana/web3.js');
+      const mint = args[0];
+      if (!mint) { console.error('Usage: --chain solana pump-info <mint>'); process.exit(1); }
+      const conn = new Connection(solRpc, 'confirmed');
+      const info = await pump.bondingCurveInfo(conn, mint);
+      if (!info.exists) {
+        console.log('No bonding curve found (token graduated or not a Pump token)');
+        const pda = pump.pdas(mint);
+        console.log('Pool PDA:', pda.canonicalPool);
+      } else {
+        console.log('═══ Pump.fun Bonding Curve ═══');
+        console.log('  Graduated:          ', info.graduated);
+        console.log('  Market Cap:         ', info.marketCapSOL, 'SOL');
+        console.log('  Virtual SOL:        ', (parseInt(info.virtualSolReserves) / 1e9).toFixed(4), 'SOL');
+        console.log('  Virtual Token:      ', info.virtualTokenReserves);
+        console.log('  Real SOL:           ', (parseInt(info.realSolReserves) / 1e9).toFixed(4), 'SOL');
+        console.log('  Total Supply:       ', info.tokenTotalSupply);
+        console.log('  Price (1M tokens):  ', (parseInt(info.pricePerTokenLamports) / 1e9).toFixed(9), 'SOL');
+      }
+      const pda = pump.pdas(mint);
+      console.log('\nPDAs:');
+      console.log('  Bonding Curve:  ', pda.bondingCurve);
+      console.log('  Bonding Curve V2:', pda.bondingCurveV2);
+      console.log('  AMM Pool:       ', pda.canonicalPool);
+      break;
+    }
+    case 'pump-quote': {
+      const pump = require(path.join(__dirname, '..', 'lib', 'pump'));
+      const { Connection } = require('@solana/web3.js');
+      // pump-quote <buy|sell|cost> <mint> <amount>
+      const action = args[0], mint = args[1], amtStr = args[2];
+      if (!action || !mint || !amtStr) { console.error('Usage: --chain solana pump-quote <buy|sell|cost> <mint> <amount_lamports_or_tokens>'); process.exit(1); }
+      const conn = new Connection(solRpc, 'confirmed');
+      const result = await pump.getQuote(conn, { mint, action, amount: amtStr });
+      console.log(JSON.stringify(result, null, 2));
+      break;
+    }
+
+    // ── Pump.fun: Token Launch ──
+    case 'pump-create': {
+      const pump = require(path.join(__dirname, '..', 'lib', 'pump'));
+      const { Connection } = require('@solana/web3.js');
+      // pump-create <name> <symbol> <uri> [--buy <sol_amount>]
+      const name = args[0], symbol = args[1], uri = args[2];
+      if (!name || !symbol || !uri) { console.error('Usage: --chain solana pump-create <name> <symbol> <metadata_uri> [--buy <sol_amount>]'); process.exit(1); }
+      let buyAmount = null;
+      for (let i = 3; i < args.length; i++) { if (args[i] === '--buy' && args[i+1]) buyAmount = parseFloat(args[++i]); }
+      const conn = new Connection(solRpc, 'confirmed');
+      const addr = await sol.getAddress();
+
+      if (buyAmount) {
+        console.log(`Creating token "${name}" ($${symbol}) + buying ${buyAmount} SOL...`);
+        const result = await pump.createAndBuy({ connection: conn, user: addr, name, symbol, uri, solAmount: Math.round(buyAmount * 1e9), signTx: (msg) => sol.sign(msg) });
+        console.log('✅ Token created + first buy!');
+        console.log('  Mint:', result.mint);
+        console.log('  TX:', `https://solscan.io/tx/${result.signature}`);
+        console.log('  Pump.fun:', `https://pump.fun/coin/${result.mint}`);
+      } else {
+        console.log(`Creating token "${name}" ($${symbol})...`);
+        const result = await pump.createToken({ connection: conn, user: addr, name, symbol, uri, signTx: (msg) => sol.sign(msg) });
+        console.log('✅ Token created!');
+        console.log('  Mint:', result.mint);
+        console.log('  TX:', `https://solscan.io/tx/${result.signature}`);
+        console.log('  Pump.fun:', `https://pump.fun/coin/${result.mint}`);
+      }
+      break;
+    }
+
+    // ── Pump.fun: Creator Fees ──
+    case 'pump-fees': {
+      const pump = require(path.join(__dirname, '..', 'lib', 'pump'));
+      const { Connection } = require('@solana/web3.js');
+      const sub = args[0]; // balance | collect | distribute | share | cashback
+      const conn = new Connection(solRpc, 'confirmed');
+      const addr = await sol.getAddress();
+
+      if (sub === 'balance') {
+        const creator = args[1] || addr;
+        const result = await pump.getCreatorFeeBalance(conn, creator);
+        console.log(`Creator fee balance: ${result.balanceSOL} SOL (${result.balance} lamports)`);
+      } else if (sub === 'collect') {
+        const creator = args[1] || addr;
+        console.log('Collecting creator fees...');
+        const result = await pump.collectCreatorFees({ connection: conn, creator, user: addr, signTx: (msg) => sol.sign(msg) });
+        if (result.signature) console.log('✅ TX:', `https://solscan.io/tx/${result.signature}`);
+        else console.log(result.message);
+      } else if (sub === 'distribute') {
+        const mint = args[1];
+        if (!mint) { console.error('Usage: pump-fees distribute <mint>'); process.exit(1); }
+        console.log('Distributing creator fees...');
+        const result = await pump.distributeFees({ connection: conn, mint, user: addr, signTx: (msg) => sol.sign(msg) });
+        if (result.signature) console.log('✅ TX:', `https://solscan.io/tx/${result.signature}`);
+        else console.log(result.message);
+      } else if (sub === 'cashback') {
+        console.log('Claiming cashback...');
+        const result = await pump.claimCashback({ connection: conn, user: addr, signTx: (msg) => sol.sign(msg) });
+        console.log('✅ TX:', `https://solscan.io/tx/${result.signature}`);
+      } else {
+        console.log('pump-fees subcommands: balance [creator], collect [creator], distribute <mint>, cashback');
+      }
+      break;
+    }
+    case 'pump-share': {
+      const pump = require(path.join(__dirname, '..', 'lib', 'pump'));
+      const { Connection } = require('@solana/web3.js');
+      // pump-share <mint> <addr1:share1> <addr2:share2> ...
+      const mint = args[0];
+      if (!mint || args.length < 2) { console.error('Usage: --chain solana pump-share <mint> <addr:share> [addr:share ...]'); process.exit(1); }
+      const shareholders = args.slice(1).map(s => {
+        const [address, share] = s.split(':');
+        return { address, share: parseInt(share) };
+      });
+      const conn = new Connection(solRpc, 'confirmed');
+      const addr = await sol.getAddress();
+      console.log('Creating fee sharing config...');
+      const result = await pump.createFeeSharing({ connection: conn, user: addr, mint, shareholders, signTx: (msg) => sol.sign(msg) });
+      console.log('✅ TX:', `https://solscan.io/tx/${result.signature}`);
+      break;
+    }
+
+    // ── Pump.fun: Incentives ──
+    case 'pump-incentives': {
+      const pump = require(path.join(__dirname, '..', 'lib', 'pump'));
+      const { Connection } = require('@solana/web3.js');
+      const sub = args[0]; // status | claim
+      const conn = new Connection(solRpc, 'confirmed');
+      const addr = await sol.getAddress();
+
+      if (sub === 'claim') {
+        console.log('Claiming token incentives...');
+        const result = await pump.claimIncentives({ connection: conn, user: addr, signTx: (msg) => sol.sign(msg) });
+        if (result.signature) console.log('✅ TX:', `https://solscan.io/tx/${result.signature}`);
+        else console.log(result.message);
+      } else {
+        const result = await pump.getUnclaimedIncentives(conn, addr);
+        console.log('Unclaimed incentives:', result.totalUnclaimed);
+        console.log('Current day:', result.currentDay);
+      }
+      break;
+    }
+
+    // ── Pump.fun: AMM Liquidity ──
+    case 'pump-lp': {
+      const pump = require(path.join(__dirname, '..', 'lib', 'pump'));
+      const { Connection } = require('@solana/web3.js');
+      const sub = args[0]; // deposit | withdraw
+      const conn = new Connection(solRpc, 'confirmed');
+      const addr = await sol.getAddress();
+
+      if (sub === 'deposit') {
+        const mint = args[1], amtStr = args[2];
+        if (!mint || !amtStr) { console.error('Usage: pump-lp deposit <mint> <token_amount>'); process.exit(1); }
+        console.log('Depositing liquidity...');
+        const result = await pump.ammDeposit({ connection: conn, mint, user: addr, baseAmount: amtStr, signTx: (msg) => sol.sign(msg) });
+        console.log('✅ LP tokens:', result.lpTokens);
+        console.log('  TX:', `https://solscan.io/tx/${result.signature}`);
+      } else if (sub === 'withdraw') {
+        const mint = args[1], amtStr = args[2];
+        if (!mint || !amtStr) { console.error('Usage: pump-lp withdraw <mint> <lp_amount>'); process.exit(1); }
+        console.log('Withdrawing liquidity...');
+        const result = await pump.ammWithdraw({ connection: conn, mint, user: addr, lpAmount: amtStr, signTx: (msg) => sol.sign(msg) });
+        console.log('✅ TX:', `https://solscan.io/tx/${result.signature}`);
+      } else {
+        console.log('pump-lp subcommands: deposit <mint> <amount>, withdraw <mint> <lp_amount>');
+      }
+      break;
+    }
+
+    // ── Pump.fun: Volume ──
+    case 'pump-volume': {
+      const pump = require(path.join(__dirname, '..', 'lib', 'pump'));
+      const { Connection } = require('@solana/web3.js');
+      const sub = args[0]; // status | sync
+      const conn = new Connection(solRpc, 'confirmed');
+      const addr = await sol.getAddress();
+
+      if (sub === 'sync') {
+        console.log('Syncing volume accumulator...');
+        const result = await pump.syncVolume({ connection: conn, user: addr, signTx: (msg) => sol.sign(msg) });
+        if (result.signature) console.log('✅ TX:', `https://solscan.io/tx/${result.signature}`);
+        else console.log(result.message);
+      } else {
+        const stats = await pump.volumeStats(conn, addr);
+        console.log(JSON.stringify(stats, null, 2));
+      }
+      break;
+    }
+
+    // ── Pump.fun: Migrate ──
+    case 'pump-migrate': {
+      const pump = require(path.join(__dirname, '..', 'lib', 'pump'));
+      const { Connection } = require('@solana/web3.js');
+      const mint = args[0], withdrawAuth = args[1];
+      if (!mint || !withdrawAuth) { console.error('Usage: pump-migrate <mint> <withdraw_authority>'); process.exit(1); }
+      const conn = new Connection(solRpc, 'confirmed');
+      const addr = await sol.getAddress();
+      console.log('Migrating...');
+      const result = await pump.migrate({ connection: conn, mint, user: addr, withdrawAuthority: withdrawAuth, signTx: (msg) => sol.sign(msg) });
+      console.log('✅ TX:', `https://solscan.io/tx/${result.signature}`);
+      break;
+    }
+
+    default:
+      console.log(`Solana commands:
+  status              Wallet status
+  balance             SOL balances
+  compute-address     Show signer + wallet PDA
+  send <to> <amt>     Send SOL
+  swap <from> <to> <amt> [--pool pump|jupiter] [--slippage N]
+  price <token>       Token price (Jupiter)
+
+  Pump.fun:
+  pump-info <mint>               Bonding curve info + PDAs
+  pump-quote <buy|sell|cost> <mint> <amount>  Price quote
+  pump-create <name> <symbol> <uri> [--buy <sol>]  Launch token
+  pump-fees balance|collect|distribute|cashback     Creator fees
+  pump-share <mint> <addr:share> ...   Create fee sharing
+  pump-incentives [status|claim]       Token incentives
+  pump-lp deposit|withdraw <mint> <amt>  AMM liquidity
+  pump-volume [status|sync]            Volume tracking
+  pump-migrate <mint> <authority>       Migrate token`);
+      if (cmd) console.log(`\nUnknown: ${cmd}`);
+  }
+}
+
 async function main() {
+  // Route Solana chain to dedicated handler
+  if ((chainArg || '').toLowerCase() === 'solana') {
+    return solanaMain(process.argv[2], process.argv.slice(3));
+  }
+
   const cmd = process.argv[2];
 
-  const chains = Object.keys(CHAINS).join('|');
+  const chains = Object.keys(CHAINS).join('|') + '|solana';
   const help = `
 Usage: wallet-manager [--chain <chain>] [--rpc <url>] [--slippage <bps>] <command> [args]
        wallet-manager status [--all]

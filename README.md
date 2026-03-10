@@ -18,7 +18,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/npm/v/aawp-ai?style=flat-square&label=npm&color=CB3837" alt="npm">
-  <img src="https://img.shields.io/badge/Live-6_EVM_Chains-0052FF?style=flat-square" alt="Live on 6 chains">
+  <img src="https://img.shields.io/badge/Live-6_EVM_+_Solana-0052FF?style=flat-square" alt="Live on 7 chains">
   <img src="https://img.shields.io/badge/Agent_Skills-Compatible-22c55e?style=flat-square" alt="Agent Skills">
   <img src="https://img.shields.io/badge/Runtime-Rust_N--API-dea584?style=flat-square&logo=rust" alt="Rust">
   <img src="https://img.shields.io/badge/Solidity-^0.8.24-363636?style=flat-square&logo=solidity" alt="Solidity">
@@ -33,10 +33,13 @@ AAWP is the first crypto wallet protocol where **only AI Agents can be the signe
 
 The AI Agent generates its own key pair. The signer is locked in at wallet creation and is immutable forever. The signing core is a native Rust addon (`aawp-core.node`) with hardware-bound key derivation. A human **guardian** can freeze or recover the wallet at any time, but can never produce signatures or move funds unilaterally.
 
-Every AAWP wallet receives a **Soulbound Identity NFT** at creation — permanent on-chain proof that the address is AI Agent-controlled and cannot be transferred to a human:
+Every AAWP wallet receives a **Soulbound Identity NFT** at creation — permanent on-chain proof that the address is AI Agent-controlled and cannot be transferred to a human. This works identically on EVM and Solana:
 
 ```solidity
+// EVM
 identity.isOfficialWallet(addr) → bool
+
+// Solana — query SBT PDA by wallet field via getProgramAccounts
 ```
 
 ---
@@ -50,7 +53,8 @@ identity.isOfficialWallet(addr) → bool
 | **Hardware-bound seed** | Non-extractable via a 4-shard + 2 hardware-anchor derivation scheme |
 | **Guardian oversight** | Humans can freeze and recover, but never sign or take ownership |
 | **Front-run resistant** | Commit-reveal wallet creation prevents address squatting |
-| **Same address everywhere** | CREATE2 vanity deployment — identical addresses on all 6 chains |
+| **Same address everywhere** | CREATE2 vanity deployment on 6 EVM chains; native Anchor program on Solana |
+| **Solana native** | Ed25519 signing from the same seed via HKDF domain separation — one identity, two ecosystems |
 | **Zero protocol fee** | No fees at the protocol layer |
 
 ---
@@ -166,6 +170,38 @@ node scripts/deploy-clanker.js
 
 All LP fees flow back to the AAWP wallet automatically.
 
+### Solana
+
+AAWP natively supports Solana via a dedicated Anchor program. Same seed, HKDF domain separation (`aawp_solana_signer_v1_{hw}`) → Ed25519 keypair independent from EVM secp256k1. Identity SBTs are minted automatically at wallet creation — same security model as EVM.
+
+```bash
+# Core
+node scripts/wallet-manager.js --chain solana balance
+node scripts/wallet-manager.js --chain solana send <to> <amount_SOL>
+node scripts/wallet-manager.js --chain solana price <token_or_mint>
+
+# Swap (auto-routes: Pump.fun bonding curve → AMM → Jupiter)
+node scripts/wallet-manager.js --chain solana swap SOL <mint> 0.1
+node scripts/wallet-manager.js --chain solana swap <mint> SOL 1000000
+node scripts/wallet-manager.js --chain solana swap SOL USDC 0.5 --pool jupiter
+
+# Pump.fun
+node scripts/wallet-manager.js --chain solana pump-info <mint>
+node scripts/wallet-manager.js --chain solana pump-quote buy <mint> <lamports>
+node scripts/wallet-manager.js --chain solana pump-create <name> <symbol> <uri> --buy 0.5
+node scripts/wallet-manager.js --chain solana pump-fees balance
+node scripts/wallet-manager.js --chain solana pump-fees collect
+node scripts/wallet-manager.js --chain solana pump-share <mint> <addr:share>
+node scripts/wallet-manager.js --chain solana pump-incentives
+node scripts/wallet-manager.js --chain solana pump-incentives claim
+node scripts/wallet-manager.js --chain solana pump-lp deposit <mint> <amount>
+node scripts/wallet-manager.js --chain solana pump-lp withdraw <mint> <amount>
+node scripts/wallet-manager.js --chain solana pump-volume
+node scripts/wallet-manager.js --chain solana pump-migrate <mint> <authority>
+```
+
+**Swap routing:** Pump.fun Bonding Curve (default) → Pump.fun AMM (graduated) → Jupiter Metis (fallback). Token-2022 auto-detected.
+
 ---
 
 ### Yield / DeFi
@@ -232,36 +268,39 @@ node scripts/wallet-manager.js restore ./aawp-backup.tar.gz
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────┐
-│  AI Agent (any Agent Skills client)              │
-│                                                  │
-│  wallet-manager.js / dca.js / price-alert.js     │
-│         │                                        │
-│         ▼                                        │
-│  Signing Daemon (Unix socket)                    │
-│  ┌─────────────────────────┐                     │
-│  │  aawp-core.node (Rust)  │  ← hardware-bound   │
-│  │  seed derivation        │    key derivation    │
-│  │  ECDSA signing          │                     │
-│  └──────────┬──────────────┘                     │
-│             │ signed tx                          │
-└─────────────┼──────────────────────────────────-─┘
+┌──────────────────────────────────────────────────────┐
+│  AI Agent (any Agent Skills client)                  │
+│                                                      │
+│  wallet-manager.js / dca.js / price-alert.js         │
+│         │                                            │
+│         ▼                                            │
+│  Signing Daemon (Unix socket)                        │
+│  ┌─────────────────────────────┐                     │
+│  │  aawp-core.node (Rust)      │  ← hardware-bound   │
+│  │  ECDSA (secp256k1) → EVM    │    key derivation    │
+│  │  EdDSA (Ed25519)   → Solana │    HKDF separated    │
+│  └──────────┬──────────────────┘                     │
+│             │ signed tx                              │
+└─────────────┼────────────────────────────────────────┘
               │
-   Guardian (gas relay) ──► EVM Chain
-                                │
-                    ┌───────────▼──────────┐
-                    │  Smart Contract      │
-                    │  Wallet (holds assets)│
-                    │  + Soulbound NFT     │
-                    └──────────────────────┘
+     ┌────────┴────────┐
+     ▼                 ▼
+  EVM Chain         Solana
+  (Guardian relay)  (AI pays directly)
+     │                 │
+  ┌──▼──────────┐  ┌───▼────────────┐
+  │ EVM Wallet  │  │ Wallet PDA     │
+  │ + SBT NFT   │  │ + SBT PDA      │
+  └─────────────┘  └────────────────┘
 ```
 
-**Key separation:** Guardian pays gas → AI Agent signs → Wallet holds assets. Humans never touch the signing key.
+**Key separation:** Guardian pays gas (EVM) / AI pays directly (Solana) → AI Agent signs → Wallet holds assets. Humans never touch the signing key.
 
 ---
 
 ## On-chain interface
 
+### EVM (Solidity)
 ```solidity
 // Check if an address is an AAWP AI wallet
 identity.isOfficialWallet(address) → bool
@@ -278,11 +317,31 @@ wallet.unfreeze()
 wallet.emergencyWithdraw(token, to, amount)
 ```
 
+### Solana (Anchor)
+```
+// Factory — wallet creation with automatic SBT mint
+initialize_factory       // One-time setup (deployer)
+approve_binary(hash)     // Whitelist binary (owner)
+commit(blind_hash)       // Phase 1: blind commit
+reveal_and_create_wallet // Phase 2: reveal + create PDA + mint SBT
+set_identity(pubkey)     // Link identity registry (owner)
+
+// Identity — soulbound AI identity
+initialize_identity      // One-time setup (governance)
+set_factory(pubkey)      // Link factory for auto-mint (governance)
+mint_identity(wallet)    // Manual mint (factory or governance)
+
+// Wallet — PDA operations
+execute(amount, data)    // Transfer SOL (AI signer)
+recover(new_signer)      // Guardian recovery
+update_guardian(new)     // Guardian update
+```
+
 ---
 
 ## Contract addresses
 
-Same address on every chain via CREATE2 vanity deployment:
+### EVM (same address on all 6 chains via CREATE2)
 
 | Contract | Address |
 |----------|---------|
@@ -290,6 +349,14 @@ Same address on every chain via CREATE2 vanity deployment:
 | **Identity** | [`0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d`](https://basescan.org/address/0xAAAafBf6F88367C75A9B701fFb4684Df6bCA1D1d) |
 
 Verified on: BaseScan · Etherscan · Arbiscan · Optimistic Etherscan · BscScan · PolygonScan
+
+### Solana (Mainnet + Devnet)
+
+| Component | Address |
+|-----------|---------|
+| **Program** | [`AAwpAAQSVAZYHvpUW5uz7zxqj7RYTYR6CZvWL9wf4qiS`](https://explorer.solana.com/address/AAwpAAQSVAZYHvpUW5uz7zxqj7RYTYR6CZvWL9wf4qiS) |
+| **Factory PDA** | `6EkR7RUVPVkJ2SNpVN6UJTLS9TZ2bqHJt9nch5fgetxx` |
+| **Identity PDA** | `8Aef6r3Q4YiuLMN9mdrZGQJJrfLJFgwEGjKa1CiHmAej` |
 
 ### $AAWP Token
 

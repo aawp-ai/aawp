@@ -1,7 +1,7 @@
 {
   "name": "aawp-skill",
-  "version": "1.6.8",
-  "description": "AAWP — AI Agent Wallet Protocol skill installer (installer-only; runtime files fetched from GitHub at provisioning time)",
+  "version": "2.0.0",
+  "description": "AAWP \u2014 AI Agent Wallet Protocol skill. 6 EVM chains + Solana native. Pump.fun SDK + Jupiter swap.",
   "bin": {
     "aawp-skill": "bin/install.js"
   },
@@ -13,7 +13,13 @@
     "README.md",
     "SKILL.md"
   ],
-  "keywords": ["aawp", "ai-agent", "wallet", "web3", "skill"],
+  "keywords": [
+    "aawp",
+    "ai-agent",
+    "wallet",
+    "web3",
+    "skill"
+  ],
   "author": "aawp-ai",
   "license": "BUSL-1.1",
   "repository": {
@@ -38,7 +44,7 @@
     "env": [
       {
         "name": "AAWP_WALLET",
-        "description": "Pinned wallet address — prevents accidental operations on wrong wallet",
+        "description": "Pinned wallet address \u2014 prevents accidental operations on wrong wallet",
         "required": false
       },
       {
@@ -62,5 +68,8 @@
         "required": false
       }
     ]
+  },
+  "dependencies": {
+    "@pump-fun/pump-sdk": "^1.31.0"
   }
 }
